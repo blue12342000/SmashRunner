@@ -20,13 +20,17 @@ public class PlayerMovement : MonoBehaviour
         m_animator.SetFloat("MoveSpeed", Input.GetAxis("Vertical") * 2);
         m_animator.SetFloat("Rotate", Input.GetAxis("Horizontal"));
 
-        m_character.Move(Vector3.forward * Time.deltaTime);
-
         if (Input.GetButtonDown("Jump") && m_character.isGrounded)
         {
             m_animator.SetTrigger("Jump");
             m_character.SimpleMove(Vector3.up * 300);
             //m_rigidbody.AddForce(Vector3.up * 300);
         }
+    }
+
+    IEnumerator Jump()
+    {
+
+        yield return null;
     }
 }
