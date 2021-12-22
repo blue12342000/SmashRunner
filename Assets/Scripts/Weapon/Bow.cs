@@ -6,8 +6,8 @@ public class Bow : Weapon
 {
     [SerializeField]
     Animator m_animator;
+    bool m_isFireReady;
 
-    Coroutine m_reloadHandle;
     public float Tension { get; set; }
 
     void Awake()
@@ -17,15 +17,21 @@ public class Bow : Weapon
 
     void Update()
     {
-        m_animator.SetFloat("Tension", 1);
+        if (m_isFireReady) Tension += Time.deltaTime;
+        m_animator.SetFloat("Tension", Tension);
+    }
+
+    public void Ready()
+    {
+        m_isFireReady = true;
+        m_animator.SetTrigger("Ready");
+        Tension = 0;
     }
 
     public override void Attack()
     {
-
-    }
-
-    private void OnAnimatorIK(int layerIndex)
-    {
+        m_isFireReady = false;
+        m_animator.SetTrigger("Fire");
+        Tension = 0;
     }
 }

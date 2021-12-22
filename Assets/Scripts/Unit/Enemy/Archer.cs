@@ -12,7 +12,7 @@ public class Archer : Enemy
     Bow m_leftWeapon;
 
     Animator m_animator;
-    bool m_isReload;
+    bool m_isCatchString;
     Quaternion m_initSpineAngle;
     Quaternion m_targetAngle;
 
@@ -34,13 +34,29 @@ public class Archer : Enemy
             // Base Layer
             if (m_sight.ObjectsInSight != null && m_sight.ObjectsInSight.Length > 0)
             {
-                // Look At Target
+                // Spin Spine IK
                 m_targetAngle = Quaternion.FromToRotation(transform.forward, (m_sight.ObjectsInSight[0].transform.position - transform.position).normalized);
                 m_targetAngle.x = -m_targetAngle.y;
                 m_targetAngle.y = 0;
                 m_targetAngle.z = 0;
             }
             m_animator.SetBoneLocalRotation(HumanBodyBones.Spine, m_initSpineAngle * m_targetAngle);
+
+            // Right Hand Catch Bow String
+            if (m_isCatchString)
+            {
+                m_animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 1.0f);
+                m_animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 0.6f);
+                m_animator.SetIKPosition(AvatarIKGoal.RightHand, m_leftWeapon.IKRigtHand.position - m_leftWeapon.transform.forward * 0.1f);
+                m_animator.SetIKRotation(AvatarIKGoal.RightHand, Quaternion.LookRotation(m_leftWeapon.transform.forward, m_animator.GetBoneTransform(HumanBodyBones.RightHand).forward));
+            }
+
+            // Look At Target
+            if (m_sight.ObjectsInSight != null && m_sight.ObjectsInSight.Length > 0)
+            {
+                m_animator.SetLookAtWeight(1);
+                m_animator.SetLookAtPosition(m_sight.ObjectsInSight[0].transform.position);
+            }
         }
         else if (layerIndex == 1)
         {
@@ -72,12 +88,16 @@ public class Archer : Enemy
 
     void Reload()
     {
-        m_isReload = true;
+        m_isCatchString = true;
+        m_leftWeapon.Ready();
+        Debug.Log("Bow String Catch");
     }
 
     void Attack()
     {
-        m_isReload = false;
+        m_isCatchString = false;
+        m_leftWeapon.Attack();
+        Debug.Log("Fire");
     }
 
     public virtual void Attack(Vector3 point, Quaternion dir, Vector3 scale)

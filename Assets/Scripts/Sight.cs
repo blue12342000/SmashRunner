@@ -43,6 +43,12 @@ public class Sight : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawLine(transform.position + Vector3.up, transform.position + Vector3.up + LeftSightVector);
         Gizmos.DrawLine(transform.position + Vector3.up, transform.position + Vector3.up + RightSightVector);
+
+        Gizmos.color = Color.blue;
+        foreach (var target in m_objectsInSight)
+        {
+            Gizmos.DrawLine(transform.position + Vector3.up, target.transform.position + Vector3.up);
+        }
     }
 
     void ResetData()
