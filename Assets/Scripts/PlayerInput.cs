@@ -7,7 +7,6 @@ public class PlayerInput : MonoBehaviour
     Unit m_character;
     Vector3 m_startDragPoint;
     Vector3 m_endDragPoint;
-    bool m_isDragDrop;
 
     void Awake()
     {
@@ -23,12 +22,10 @@ public class PlayerInput : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
-            m_isDragDrop = false;
             m_startDragPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition, 1);
         }
         if (Input.GetMouseButtonUp(0))
         {
-            m_isDragDrop = true;
             m_endDragPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition, 1);
 
             foreach (var obj in m_character.Sight.ObjectsInSight)

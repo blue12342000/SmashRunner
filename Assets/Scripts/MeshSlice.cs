@@ -20,7 +20,6 @@ public class MeshSlice : MonoBehaviour
 
     static Vector3 m_center;
     static Vector3 m_normal;
-    static bool isDrawGizmo = false;
 
     // Slice Side Mesh Vertices, Indices, Normals, Uvs
     static List<int>[] m_sideIndices = new List<int>[] { new List<int>(), new List<int>(), new List<int>() };
