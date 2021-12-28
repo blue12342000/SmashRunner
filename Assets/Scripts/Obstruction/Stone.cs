@@ -13,7 +13,6 @@ public class Stone : Obstruction, ICutable
         {
             foreach (var obj in subObjects)
             {
-                Debug.Log($"{obj.name} : {obj.GetComponent<MeshFilter>().mesh.bounds.size.magnitude}");
                 if (obj.GetComponent<MeshFilter>().mesh.bounds.size.magnitude < 5)
                 {
                     obj.GetComponent<Obstruction>().enabled = false;

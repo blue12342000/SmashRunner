@@ -22,17 +22,4 @@ public abstract class Unit : MonoBehaviour, IHitable
     public Sight Sight { get { return m_sight; } }
 
     public abstract void Hit();
-
-    void Awake()
-    {
-        m_characterController = GetComponent<CharacterController>();
-        m_sight = GetComponent<Sight>();
-    }
-
-    void Update()
-    {
-    }
-
-    public virtual void Jump() { }
-    public virtual void Attack(Vector3 point, Quaternion dir, Vector3 scale) { }
 }

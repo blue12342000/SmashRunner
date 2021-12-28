@@ -17,7 +17,7 @@ public class PlayerInput : MonoBehaviour
     {
         if (Input.GetButtonDown("Jump"))
         {
-            m_character.Jump();
+
         }
 
         if (Input.GetMouseButtonDown(0))

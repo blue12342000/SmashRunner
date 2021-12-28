@@ -22,6 +22,7 @@ public class Sight : MonoBehaviour
     Vector3 RightSightVector { get { return new Vector3(Mathf.Sin(RightSeightAngle), 0, Mathf.Cos(RightSeightAngle)) * m_range; } }
     public GameObject[] ObjectsInSight { get { return m_objectsInSight.ToArray(); } }
     public HashSet<GameObject> OutOfSight { get { return m_outOfSight; } }
+    public bool IsEmpty { get { return m_objectsInSight.Count == 0; } }
 
     void OnDisable()
     {

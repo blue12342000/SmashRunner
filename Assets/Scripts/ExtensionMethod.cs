@@ -14,4 +14,12 @@ public static class ExtensionMethod
     {
         return Vector3.Cross(point1 - cam.transform.position, point2 - cam.transform.position);
     }
+
+    public static void Initialize(this EnemyBehaviour[] behaviours, MonoBehaviour target)
+    {
+        for (int i = 0, e = behaviours.Length; i < e; ++i)
+        {
+            behaviours[i].OnInitialize(target);
+        }
+    }
 }
