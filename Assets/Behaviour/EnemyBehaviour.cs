@@ -10,6 +10,8 @@ public abstract class EnemyBehaviour : StateMachineBehaviour
     static protected readonly int m_hashFail = Animator.StringToHash("Fail");
     static protected readonly int m_hashSeek = Animator.StringToHash("Seek");
     static protected readonly int m_hashAttackReady = Animator.StringToHash("AttackReady");
+    static protected readonly int m_hashAlert = Animator.StringToHash("Alert");
+    static protected readonly int m_hashDirection = Animator.StringToHash("Direction");
 
     public abstract void OnInitialize(MonoBehaviour target);
 }

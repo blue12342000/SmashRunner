@@ -20,6 +20,7 @@ public class Sight : MonoBehaviour
     float RightSeightAngle { get { return (transform.eulerAngles.y + m_fov * 0.5f) * Mathf.Deg2Rad; } }
     Vector3 LeftSightVector { get { return new Vector3(Mathf.Sin(LeftSeightAngle), 0, Mathf.Cos(LeftSeightAngle)) * m_range; } }
     Vector3 RightSightVector { get { return new Vector3(Mathf.Sin(RightSeightAngle), 0, Mathf.Cos(RightSeightAngle)) * m_range; } }
+    public GameObject ObjectInSight { get { return m_objectsInSight.Count > 0 ? m_objectsInSight[0] : null; } }
     public GameObject[] ObjectsInSight { get { return m_objectsInSight.ToArray(); } }
     public HashSet<GameObject> OutOfSight { get { return m_outOfSight; } }
     public bool IsEmpty { get { return m_objectsInSight.Count == 0; } }

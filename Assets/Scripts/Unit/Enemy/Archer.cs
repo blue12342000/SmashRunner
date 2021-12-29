@@ -4,6 +4,7 @@ using UnityEngine;
 
 public interface ISeek
 {
+    Transform AlertPoint { get; }
     bool Seeking();
 }
 
@@ -49,6 +50,7 @@ public class Archer : Enemy, ISeek, ICatch, IAttack, IReload
     Quaternion m_targetAngle;
     GameObject m_target;
 
+    public Transform AlertPoint => m_sight.ObjectInSight.transform;
     public ITakeOut TakeOutHandle => m_backSlot;
     public bool IsAttackReady => m_backSlot && !m_backSlot.IsEmpty;
 
@@ -142,8 +144,8 @@ public class Archer : Enemy, ISeek, ICatch, IAttack, IReload
 
     public bool Seeking()
     {
-        if (m_sight == null && m_sight.IsEmpty) { m_target = null; return false; }
-        m_target = m_sight.ObjectsInSight[0];
+        if (m_sight == null || m_sight.IsEmpty) { m_target = null; return false; }
+        m_target = m_sight.ObjectInSight;
         return true;
     }
 
