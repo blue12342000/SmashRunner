@@ -47,6 +47,7 @@ public class Archer : Enemy, ISeek, ICatch, IAttack, IReload
     bool m_isCatchString;
     Quaternion m_initSpineAngle;
     Quaternion m_targetAngle;
+    GameObject m_target;
 
     public ITakeOut TakeOutHandle => m_backSlot;
     public bool IsAttackReady => m_backSlot && !m_backSlot.IsEmpty;
@@ -72,10 +73,10 @@ public class Archer : Enemy, ISeek, ICatch, IAttack, IReload
         if (layerIndex == 0)
         {
             // Base Layer
-            if (!m_sight.IsEmpty)
+            if (m_target)
             {
                 // Spin Spine IK
-                m_targetAngle = Quaternion.FromToRotation((transform.forward + transform.right * 0.1f).normalized, (m_sight.ObjectsInSight[0].transform.position - transform.position).normalized);
+                m_targetAngle = Quaternion.FromToRotation((transform.forward + transform.right * 0.1f).normalized, (m_target.transform.position - transform.position).normalized);
                 m_targetAngle.x = -m_targetAngle.y;
                 m_targetAngle.y = 0;
                 m_targetAngle.z = 0;
@@ -92,10 +93,10 @@ public class Archer : Enemy, ISeek, ICatch, IAttack, IReload
             }
 
             // Look At Target
-            if (!m_sight.IsEmpty)
+            if (m_target)
             {
                 m_animator.SetLookAtWeight(1);
-                m_animator.SetLookAtPosition(m_sight.ObjectsInSight[0].transform.position);
+                m_animator.SetLookAtPosition(m_target.transform.position);
             }
         }
         else if (layerIndex == 1)
@@ -136,12 +137,14 @@ public class Archer : Enemy, ISeek, ICatch, IAttack, IReload
     public void Attack()
     {
         m_isCatchString = false;
-        m_leftWeapon.Attack();
+        m_leftWeapon.Attack(m_target);
     }
 
     public bool Seeking()
     {
-        return m_sight && !m_sight.IsEmpty;
+        if (m_sight == null && m_sight.IsEmpty) { m_target = null; return false; }
+        m_target = m_sight.ObjectsInSight[0];
+        return true;
     }
 
     public bool Catch(GameObject obj)

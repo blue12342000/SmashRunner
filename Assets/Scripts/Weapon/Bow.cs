@@ -41,7 +41,7 @@ public class Bow : Weapon
         arrow.transform.LookAt(transform.position, Vector3.up);
     }
 
-    public override void Attack()
+    public override void Attack(GameObject target)
     {
         m_isFireReady = false;
         m_animator.SetTrigger(m_hashFire);
@@ -49,8 +49,7 @@ public class Bow : Weapon
         if (m_arrow != null)
         {
             m_arrow.transform.parent = null;
-            m_arrow.GetComponent<Rigidbody>().AddForce(m_arrow.transform.forward * 18f);
-            //m_arrow.GetComponent<Rigidbody>().useGravity = true;
+            if (target != null) m_arrow.GetComponent<Arrow>().Fire(target.transform, 1);
             m_arrow = null;
         }
     }

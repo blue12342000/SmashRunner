@@ -13,5 +13,5 @@ public abstract class Weapon : MonoBehaviour
     public Transform IKLeftHand { get { return m_IKLeftHandTransform; } }
     public Transform IKRigtHand { get { return m_IKRightHandTransform; } }
 
-    public abstract void Attack();
+    public abstract void Attack(GameObject target);
 }

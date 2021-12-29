@@ -302,14 +302,27 @@ public class MeshSlice : MonoBehaviour
 
         meshFilter.mesh = newMeshes[0];
         obj.GetComponent<MeshCollider>().sharedMesh = newMeshes[0];
+        obj.GetComponent<MeshCollider>().isTrigger = false;
+        if (!obj.GetComponent<Rigidbody>())
+        {
+            obj.AddComponent<Rigidbody>();
+        }
         obj.GetComponent<Rigidbody>().useGravity = true;
         obj.GetComponent<Rigidbody>().isKinematic = false;
-        obj.GetComponent<Rigidbody>().AddForce((planeNormal + Vector3.up).normalized * 300f);
+        obj.GetComponent<Rigidbody>().AddForce((planeNormal + Vector3.up).normalized * 100f);
 
-        GameObject otherObject = Instantiate(obj, obj.transform.position, obj.transform.rotation, obj.transform.parent);
+        GameObject otherObject = new GameObject("Other Side", typeof(Rigidbody), typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
+        otherObject.transform.position = obj.transform.position;
+        otherObject.transform.rotation = obj.transform.rotation;
+        otherObject.transform.localScale = obj.transform.localScale;
+        otherObject.transform.parent = obj.transform.parent;
+        //GameObject otherObject = Instantiate(obj, obj.transform.position, obj.transform.rotation, obj.transform.parent);
         otherObject.GetComponent<MeshFilter>().mesh = newMeshes[1];
+        otherObject.GetComponent<MeshRenderer>().materials = obj.GetComponent<MeshRenderer>().materials;
         otherObject.GetComponent<MeshCollider>().sharedMesh = newMeshes[1];
-        otherObject.GetComponent<Rigidbody>().AddForce((-planeNormal + Vector3.up).normalized * 300f);
+        otherObject.GetComponent<MeshCollider>().isTrigger = false;
+        otherObject.GetComponent<MeshCollider>().convex = true;
+        otherObject.GetComponent<Rigidbody>().AddForce((-planeNormal + Vector3.up).normalized * 100f);
         otherObject.layer = obj.layer;
 
         return new GameObject[] { obj, otherObject };
