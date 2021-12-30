@@ -4,8 +4,14 @@ using UnityEngine;
 
 public interface ISeek
 {
-    Transform AlertPoint { get; }
-    bool Seeking();
+    Sight Eye { get; }
+    bool Seek();
+}
+
+public interface IDetect
+{
+    Sight Eye { get; }
+    bool Detect();
 }
 
 public interface ICatch
@@ -31,7 +37,7 @@ public interface IReload
     void Reload();
 }
 
-public class Archer : Enemy, ISeek, ICatch, IAttack, IReload
+public class Archer : Enemy, ISeek, IDetect, ICatch, IAttack, IReload
 {
     [SerializeField]
     float m_attackSpeed;
@@ -50,7 +56,7 @@ public class Archer : Enemy, ISeek, ICatch, IAttack, IReload
     Quaternion m_targetAngle;
     GameObject m_target;
 
-    public Transform AlertPoint => m_sight.ObjectInSight.transform;
+    public Sight Eye => m_sight;
     public ITakeOut TakeOutHandle => m_backSlot;
     public bool IsAttackReady => m_backSlot && !m_backSlot.IsEmpty;
 
@@ -142,11 +148,15 @@ public class Archer : Enemy, ISeek, ICatch, IAttack, IReload
         m_leftWeapon.Attack(m_target);
     }
 
-    public bool Seeking()
+    public bool Seek()
     {
-        if (m_sight == null || m_sight.IsEmpty) { m_target = null; return false; }
         m_target = m_sight.ObjectInSight;
-        return true;
+        return m_target != null;
+    }
+
+    public bool Detect()
+    {
+        return m_sight.IsExistInRange;
     }
 
     public bool Catch(GameObject obj)

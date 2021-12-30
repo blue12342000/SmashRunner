@@ -4,18 +4,18 @@ using UnityEngine;
 
 public class SMBAlert : EnemyBehaviour
 {
-    ISeek m_seek;
+    IDetect m_detect;
 
     public override void OnInitialize(MonoBehaviour target)
     {
-        m_seek = target as ISeek;
-        m_isInitialize = m_seek != null;
+        m_detect = target as IDetect;
+        m_isInitialize = m_detect != null;
     }
 
     // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
     override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        if (m_isInitialize && m_seek.Seeking())
+        if (m_isInitialize && m_detect.Detect())
         {
             animator.SetTrigger(m_hashAlert);
         }
