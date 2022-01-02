@@ -1,9 +1,20 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Sight : MonoBehaviour
 {
+    [Flags]
+    private enum ViewFlag
+    {
+        None = 0,
+        Invisible = 1,
+        Visible = 2,
+        InSight = 4,
+        InRange = 8
+    }
+
     private class MoreClose : IComparer<GameObject>
     {
         public Vector3 Point;
@@ -53,7 +64,8 @@ public class Sight : MonoBehaviour
     public bool IsExistInRange => IsExistInSight || IsExistOutSight;
 
     List<Vector3> debugSearchList = new List<Vector3>();
-    List<Vector3> debugShortList = new List<Vector3>();
+    List<Vector3> debugPassList = new List<Vector3>();
+    List<Vector3> debugFailList = new List<Vector3>();
 
     void Awake()
     {
@@ -101,25 +113,69 @@ public class Sight : MonoBehaviour
         }
 
         Gizmos.color = Color.blue;
-        foreach (Vector3 v in debugShortList)
+        foreach (Vector3 v in debugPassList)
+        {
+            Gizmos.DrawCube(v, size);
+        }
+
+        Gizmos.color = Color.red;
+        foreach (Vector3 v in debugFailList)
         {
             Gizmos.DrawCube(v, size);
         }
     }
 
+    ViewFlag ConfirmViewFlag(Ray ray, float distance, Collider collider, int layer, out Vector3 hitPoint)
+    {
+        ViewFlag viewFlag = ViewFlag.None;
+        distance = Mathf.Min(m_range, distance);
+        if (!Physics.Raycast(ray, out RaycastHit hitInfo, distance, layer))
+        {
+            hitPoint = ray.origin + ray.direction * distance;
+            viewFlag |= ViewFlag.Invisible;
+        }
+        else
+        {
+            // Ray Hit
+            hitPoint = hitInfo.point;
+            viewFlag |= ViewFlag.InRange;
+
+            // Is Target?
+            if (hitInfo.collider == collider)
+            {
+                viewFlag |= ViewFlag.Visible;
+            }
+            else
+            {
+                viewFlag |= ViewFlag.Invisible;
+            }
+
+            // Is In Sight?
+            if (Vector3.Angle(transform.forward, ray.direction) < (m_fov * 0.5f))
+            {
+                // In Sight
+                viewFlag |= ViewFlag.InSight;
+            }
+        }
+
+        return viewFlag;
+    }
+
     IEnumerator CheckSight()
     {
-        float targetCos;
         Ray ray = new Ray();
-        float tempDistance;
-        RaycastHit hitInfo;
+        float rayDistance;
+        Vector3 hitPoint;
+        ViewFlag viewFlag;
+        ViewFlag maskVisibleInSight = ViewFlag.Visible | ViewFlag.InSight;
 
         while (true)
         {
             m_objectsInSight.Clear();
             m_objectsOutSight.Clear();
             debugSearchList.Clear();
-            debugShortList.Clear();
+            debugPassList.Clear();
+            debugFailList.Clear();
 
             m_compareMoreClose.Point = transform.position;
             ray.origin = transform.position + m_pivot;
@@ -128,19 +184,25 @@ public class Sight : MonoBehaviour
                 if (collider.gameObject == gameObject) continue;
 
                 // confirm between origin point and target Point
-                bool isCanSee = false;
-                bool isInSight = false;
-
-                int targetLayer = 1 << collider.gameObject.layer;
+                int targetLayer = m_blockLayer.value | (1 << collider.gameObject.layer);
                 Vector3 colliderDir = (collider.bounds.center - (transform.position + m_pivot)).normalized;
                 Vector3 projOrigin = collider.bounds.center + colliderDir * Vector3.Project(collider.bounds.extents, (collider.bounds.center - transform.position).normalized).magnitude;
+                ViewFlag detectFlag = ViewFlag.InRange;
 
+                // Check Boundary Center
                 ray.direction = projOrigin - ray.origin;
-                tempDistance = (projOrigin - ray.origin).magnitude;
-                if (Physics.Raycast(ray, out hitInfo, tempDistance, m_blockLayer.value | targetLayer))
+                rayDistance = (projOrigin - ray.origin).magnitude;
+                viewFlag = ConfirmViewFlag(ray, rayDistance, collider, targetLayer, out hitPoint);
+                detectFlag |= (viewFlag & ViewFlag.Visible);
+                if ((viewFlag & maskVisibleInSight) == maskVisibleInSight)
                 {
-                    debugShortList.Add(hitInfo.point);
-                    isCanSee = hitInfo.collider == collider;
+                    // Visible In Sight
+                    detectFlag |= ViewFlag.InSight;
+                    debugPassList.Add(hitPoint);
+                }
+                else
+                {
+                    debugFailList.Add(hitPoint);
                 }
 
                 Vector3 projUpVector = Vector3.Project(collider.bounds.extents, transform.up);
@@ -150,6 +212,7 @@ public class Sight : MonoBehaviour
                 int projVerticlScale = Mathf.CeilToInt(projUpVector.magnitude / m_pricision);
                 int projHorizontalScale = Mathf.CeilToInt(projRightVector.magnitude / m_pricision);
 
+                // Debug Gizmos Check List
                 debugSearchList.Add(projOrigin);
                 for (int v = 1; v < projVerticlScale; ++v)
                 {
@@ -164,75 +227,75 @@ public class Sight : MonoBehaviour
                 }
 
                 // Check Vertical Line
-                if (!isCanSee)
+                if ((detectFlag & maskVisibleInSight) != maskVisibleInSight)
                 {
                     for (int v = 1; v < projVerticlScale; ++v)
                     {
                         ray.direction = projOrigin + projUpDir * v * m_pricision - ray.origin;
-                        tempDistance = (projOrigin + projUpDir * v * m_pricision - ray.origin).magnitude;
-                        if (Physics.Raycast(ray, out hitInfo, tempDistance, m_blockLayer.value | targetLayer))
+                        rayDistance = (projOrigin + projUpDir * v * m_pricision - ray.origin).magnitude;
+                        viewFlag = ConfirmViewFlag(ray, rayDistance, collider, targetLayer, out hitPoint);
+                        detectFlag |= (viewFlag & ViewFlag.Visible);
+                        if ((viewFlag & maskVisibleInSight) == maskVisibleInSight)
                         {
-                            debugShortList.Add(hitInfo.point);
-                            isCanSee = hitInfo.collider == collider;
+                            // Visible In Sight
+                            detectFlag |= ViewFlag.InSight;
+                            debugPassList.Add(hitPoint);
+                            break;
                         }
-
-                        if (isCanSee) break;
+                        debugFailList.Add(hitPoint);
 
                         ray.direction = projOrigin - projUpDir * v * m_pricision - ray.origin;
-                        tempDistance = (projOrigin - projUpDir * v * m_pricision - ray.origin).magnitude;
-                        if (Physics.Raycast(ray, out hitInfo, tempDistance, m_blockLayer.value | targetLayer))
+                        rayDistance = (projOrigin - projUpDir * v * m_pricision - ray.origin).magnitude;
+                        viewFlag = ConfirmViewFlag(ray, rayDistance, collider, targetLayer, out hitPoint);
+                        detectFlag |= (viewFlag & ViewFlag.Visible);
+                        if ((viewFlag & maskVisibleInSight) == maskVisibleInSight)
                         {
-                            debugShortList.Add(hitInfo.point);
-                            isCanSee = hitInfo.collider == collider;
+                            // Visible In Sight
+                            detectFlag |= ViewFlag.InSight;
+                            debugPassList.Add(hitPoint);
+                            break;
                         }
-
-                        if (isCanSee) break;
+                        debugFailList.Add(hitPoint);
                     }
                 }
+
                 // Check Hrizontal Line
-                if (!isCanSee)
+                if ((detectFlag & maskVisibleInSight) != maskVisibleInSight)
                 {
                     for (int h = 1; h < projHorizontalScale; ++h)
                     {
-                        ray.direction = projOrigin + projRightDir * h * 0.1f - ray.origin;
-                        tempDistance = (projOrigin + projRightDir * h * 0.1f - ray.origin).magnitude;
-                        if (Physics.Raycast(ray, out hitInfo, tempDistance, m_blockLayer.value | targetLayer))
+                        ray.direction = projOrigin + projRightDir * h * m_pricision - ray.origin;
+                        rayDistance = (projOrigin + projRightDir * h * m_pricision - ray.origin).magnitude;
+                        viewFlag = ConfirmViewFlag(ray, rayDistance, collider, targetLayer, out hitPoint);
+                        detectFlag |= (viewFlag & ViewFlag.Visible);
+                        if ((viewFlag & maskVisibleInSight) == maskVisibleInSight)
                         {
-                            debugShortList.Add(hitInfo.point);
-                            isCanSee = hitInfo.collider == collider;
+                            // Visible In Sight
+                            detectFlag |= ViewFlag.InSight;
+                            debugPassList.Add(hitPoint);
+                            break;
                         }
+                        debugFailList.Add(hitPoint);
 
-                        if (isCanSee) break;
-
-                        ray.direction = projOrigin - projRightDir * h * 0.1f - ray.origin;
-                        tempDistance = (projOrigin - projRightDir * h * 0.1f - ray.origin).magnitude;
-                        if (Physics.Raycast(ray, out hitInfo, tempDistance, m_blockLayer.value | targetLayer))
+                        ray.direction = projOrigin - projRightDir * h * m_pricision - ray.origin;
+                        rayDistance = (projOrigin - projRightDir * h * m_pricision - ray.origin).magnitude;
+                        viewFlag = ConfirmViewFlag(ray, rayDistance, collider, targetLayer, out hitPoint);
+                        detectFlag |= (viewFlag & ViewFlag.Visible);
+                        if ((viewFlag & maskVisibleInSight) == maskVisibleInSight)
                         {
-                            debugShortList.Add(hitInfo.point);
-                            isCanSee = hitInfo.collider == collider;
+                            // Visible In Sight
+                            detectFlag |= ViewFlag.InSight;
+                            debugPassList.Add(hitPoint);
+                            break;
                         }
-
-                        if (isCanSee) break;
+                        debugFailList.Add(hitPoint);
                     }
                 }
 
-                if (!isCanSee) continue;
+                if ((detectFlag & ViewFlag.Visible) == ViewFlag.None) continue;
 
-                if (isInSight) m_objectsInSight.Add(collider.gameObject);
+                if ((detectFlag & ViewFlag.InSight) == ViewFlag.InSight) m_objectsInSight.Add(collider.gameObject);
                 else m_objectsOutSight.Add(collider.gameObject);
-
-                // Valid Object In Range
-                //targetCos = Vector3.Dot(transform.forward, (collider.transform.position - transform.position).normalized);
-                //if (targetCos > 0 && Mathf.Acos(targetCos) < m_fov * 0.5f * Mathf.Deg2Rad)
-                //{
-                //    // In Sight
-                //    m_objectsInSight.Add(collider.gameObject);
-                //}
-                //else
-                //{
-                //    // Out Sight
-                //    m_objectsOutSight.Add(collider.gameObject);
-                //}
             }
 
             yield return new WaitForSeconds(0.1f);

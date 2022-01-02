@@ -24,8 +24,16 @@ public class SMBStanding : EnemyBehaviour
     {
         if (!m_isInitialize) return;
         animator.SetBool(m_hashSit, false);
-        animator.SetFloat(m_hashDirection, Vector3.Dot(m_detect.Eye.transform.forward, m_detect.Eye.ObjectOutSight.transform.position - m_detect.Eye.transform.position));
-        m_destAngle = Quaternion.FromToRotation(Vector3.forward, (m_detect.Eye.ObjectOutSight.transform.position - m_detect.Eye.transform.position).normalized);
+        animator.SetBool(m_hashInSight, m_detect.Eye.IsExistInSight);
+
+        if (m_detect.Eye.IsExistInSight)
+        {
+            m_destAngle = Quaternion.FromToRotation(Vector3.forward, (m_detect.Eye.ObjectInSight.transform.position - m_detect.Eye.transform.position).normalized);
+        }
+        else if (m_detect.Eye.IsExistInRange)
+        {
+            m_destAngle = Quaternion.FromToRotation(Vector3.forward, (m_detect.Eye.ObjectOutSight.transform.position - m_detect.Eye.transform.position).normalized);
+        }
     }
 
     public override void OnStateMachineExit(Animator animator, int stateMachinePathHash)

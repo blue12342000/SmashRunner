@@ -17,7 +17,7 @@ public class SMBAlert : EnemyBehaviour
     {
         if (m_isInitialize && m_detect.Detect())
         {
-            animator.SetTrigger(m_hashAlert);
+            animator.SetTrigger(m_hashDetect);
         }
     }
 }

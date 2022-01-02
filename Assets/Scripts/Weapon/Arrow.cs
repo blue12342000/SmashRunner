@@ -4,7 +4,9 @@ using UnityEngine;
 
 public class Arrow : MonoBehaviour, ICutable
 {
+    [SerializeField]
     float m_force;
+    [SerializeField]
     Transform m_target;
     MeshCollider[] m_childColliders;
 
