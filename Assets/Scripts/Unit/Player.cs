@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class Player : Unit, IHitable
 {
+    public delegate void CAction();
+
+    public CAction m_action;
+
     void Awake()
     {
         m_sight = GetComponent<Sight>();

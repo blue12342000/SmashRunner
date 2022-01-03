@@ -8,9 +8,6 @@ using UnityEngine.Events;
 public class CustomTrigger : MonoBehaviour
 {
     [SerializeField]
-    event UnityAction<GameObject> m_CallBack;
-
-    [SerializeField]
     LayerMask m_targetLayer;
     [SerializeField]
     Vector3 m_center;

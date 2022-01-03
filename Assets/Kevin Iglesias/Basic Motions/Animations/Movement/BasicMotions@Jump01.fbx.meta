@@ -465,7 +465,7 @@ ModelImporter:
       takeName: BasicMotions@Jump01
       internalID: 0
       firstFrame: 0
-      lastFrame: 34
+      lastFrame: 10
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -640,7 +640,7 @@ ModelImporter:
       loop: 0
       hasAdditiveReferencePose: 0
       loopTime: 1
-      loopBlend: 0
+      loopBlend: 1
       loopBlendOrientation: 1
       loopBlendPositionY: 1
       loopBlendPositionXZ: 1
@@ -798,7 +798,7 @@ ModelImporter:
       name: BasicMotions@Jump01 - Land
       takeName: BasicMotions@Jump01
       internalID: 0
-      firstFrame: 18
+      firstFrame: 12.1
       lastFrame: 34
       wrapMode: 0
       orientationOffsetY: 0
