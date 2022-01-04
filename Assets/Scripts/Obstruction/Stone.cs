@@ -13,9 +13,14 @@ public class Stone : Obstruction, ICutable
         {
             foreach (var obj in subObjects)
             {
+                if (obj.GetComponent<Stone>() == null)
+                {
+                    obj.AddComponent<Stone>();
+                }
+
                 if (obj.GetComponent<MeshFilter>().mesh.bounds.size.magnitude < 5)
                 {
-                    obj.GetComponent<Obstruction>().enabled = false;
+                    obj.GetComponent<Stone>().enabled = false;
                     Destroy(obj, 4.0f);
                 }
             }

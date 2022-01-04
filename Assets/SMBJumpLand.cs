@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class SMBJumpLand : StateMachineBehaviour
 {
+    static readonly int m_hashJump = Animator.StringToHash("Jump");
+
     [SerializeField]
     float m_gravity;
     [SerializeField]
@@ -26,5 +28,10 @@ public class SMBJumpLand : StateMachineBehaviour
         {
             m_groundPoint = hitInfo.point;
         }
+    }
+
+    public override void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    {
+        animator.SetBool(m_hashJump, false);
     }
 }

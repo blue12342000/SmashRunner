@@ -4,21 +4,23 @@ using UnityEngine;
 
 public class PlayerInput : MonoBehaviour
 {
-    Unit m_character;
+    Player m_character;
     Vector3 m_startDragPoint;
     Vector3 m_endDragPoint;
 
     void Awake()
     {
-        m_character = GetComponent<Unit>();
+        m_character = GetComponent<Player>();
     }
 
     void Update()
     {
         if (Input.GetButtonDown("Jump"))
         {
-
+            m_character.Jump();
         }
+
+        m_character.Move(Input.GetAxis("Vertical"));
 
         if (Input.GetMouseButtonDown(0))
         {

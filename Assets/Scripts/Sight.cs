@@ -98,6 +98,7 @@ public class Sight : MonoBehaviour
         Gizmos.color = Color.blue;
         foreach (var target in m_objectsInSight)
         {
+            if (target == null) continue;
             Gizmos.DrawLine(transform.position + m_pivot, target.transform.position);
         }
     }
