@@ -20,7 +20,7 @@ public class PlayerInput : MonoBehaviour
             m_character.Jump();
         }
 
-        m_character.Move(Input.GetAxis("Vertical"));
+        m_character.Move(Input.GetAxis("Vertical") * 3);
 
         if (Input.GetMouseButtonDown(0))
         {

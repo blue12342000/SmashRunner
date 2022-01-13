@@ -16,9 +16,16 @@ public class SMBJump : StateMachineBehaviour
         Land
     }
 
-    [Header("- Jump Action Data ([Distance Mode] Not Use Angle)")]
+    enum JumpMode
+    {
+        Fixed_Both,
+        Fixed_Force,
+        Fixed_Angle
+    }
+
+    [Header("- Jump Action Data")]
     [SerializeField]
-    bool m_isJumpDistanceMode;
+    JumpMode m_jumpMode = JumpMode.Fixed_Both;
     [SerializeField]
     float m_jumpAngle;
     [SerializeField]
@@ -111,15 +118,22 @@ public class SMBJump : StateMachineBehaviour
     override public void OnStateMachineEnter(Animator animator, int stateMachinePathHash)
     {
         m_jumpState = JumpState.UP;
-
         float jumpAngle = m_jumpAngle * Mathf.Deg2Rad;
-        if (m_isJumpDistanceMode)
+        float jumpForce = m_jumpForce;
+
+        switch (m_jumpMode)
         {
-            m_jumpDistance = animator.GetFloat(m_hashJumpDistance);
-            jumpAngle = Mathf.Acos(m_gravityAcceleration * m_jumpDistance * 0.5f / (m_jumpForce * m_jumpForce));
+            case JumpMode.Fixed_Force:
+                m_jumpDistance = animator.GetFloat(m_hashJumpDistance);
+                jumpAngle = Mathf.Acos(m_gravityAcceleration * m_jumpDistance * 0.5f / (jumpForce * jumpForce));
+                break;
+            case JumpMode.Fixed_Angle:
+                m_jumpDistance = animator.GetFloat(m_hashJumpDistance);
+                jumpForce = Mathf.Sqrt(m_jumpDistance * m_gravityAcceleration * 0.5f / (Mathf.Sin(jumpAngle) * Mathf.Cos(jumpAngle) * Mathf.Cos(jumpAngle)));
+                break;
         }
-        m_velocityFoward = animator.transform.forward * m_jumpForce * Mathf.Cos(jumpAngle);
-        m_velocityUp = Vector3.up * m_jumpForce * Mathf.Sin(jumpAngle);
+        m_velocityFoward = animator.transform.forward * jumpForce * Mathf.Cos(jumpAngle);
+        m_velocityUp = Vector3.up * jumpForce * Mathf.Sin(jumpAngle);
     }
 
     // OnStateMachineExit is called when exiting a state machine via its Exit Node

@@ -7,6 +7,16 @@ using UnityEngine.Events;
 
 public class CustomTrigger : MonoBehaviour
 {
+    enum TriggerState
+    {
+        Ready,
+        OnEnter,
+        OnExit,
+        Terminated
+    }
+
+    [SerializeField]
+    TriggerState m_state = TriggerState.Ready;
     [SerializeField]
     LayerMask m_targetLayer;
     [SerializeField]
@@ -15,16 +25,16 @@ public class CustomTrigger : MonoBehaviour
     float m_radius;
 
     [SerializeField]
-    UnityEvent<GameObject> m_enter;
+    UnityEvent m_enter;
     [SerializeField]
-    UnityEvent<GameObject> m_exit;
+    UnityEvent m_exit;
 
     Coroutine m_handle;
 
     void OnEnable()
     {
         if (m_handle != null) StopAllCoroutines();
-        m_handle = StartCoroutine(EnterTargetCheck());
+        m_handle = StartCoroutine(TargetCheck());
     }
 
     void OnDrawGizmosSelected()
@@ -33,38 +43,31 @@ public class CustomTrigger : MonoBehaviour
         Gizmos.DrawWireSphere(m_center + transform.position, m_radius);
     }
 
-    void And(GameObject b)
-    { }
-
-    IEnumerator EnterTargetCheck()
+    IEnumerator TargetCheck()
     {
+        if (m_state == TriggerState.Ready) m_state = TriggerState.OnEnter;
         yield return null;
-        while (true)
+
+        while (m_state != TriggerState.Terminated)
         {
-            if (Physics.SphereCast(m_center + transform.position, m_radius, transform.forward, out RaycastHit hitInfo, m_targetLayer.value))
+            switch (m_state)
             {
-                if (m_enter != null) m_enter.Invoke(hitInfo.collider.gameObject);
-                m_handle = StartCoroutine(ExitTargetCheck(hitInfo.collider));
-                break;
+                case TriggerState.OnEnter:
+                    if (Physics.CheckSphere(m_center + transform.position, m_radius, m_targetLayer.value))
+                    {
+                        if (m_enter != null) m_enter.Invoke();
+                        m_state = TriggerState.OnExit;
+                    }
+                    break;
+                case TriggerState.OnExit:
+                    if (!Physics.CheckSphere(m_center + transform.position, m_radius, m_targetLayer.value))
+                    {
+                        if (m_exit != null) m_exit.Invoke();
+                        m_state = TriggerState.Terminated;
+                    }
+                    break;
             }
             yield return new WaitForSeconds(0.1f);
         }
-    }
-
-    IEnumerator ExitTargetCheck(Collider target)
-    {
-        yield return null;
-        while (true)
-        {
-            Vector3 point = m_center + transform.position;
-            if (Vector3.Distance(point, target.ClosestPoint(point)) > m_radius)
-            {
-                if (m_exit != null) m_exit.Invoke(target.gameObject);
-                m_handle = null;
-                break;
-            }
-            yield return new WaitForSeconds(0.1f);
-        }
-        enabled = false;
     }
 }

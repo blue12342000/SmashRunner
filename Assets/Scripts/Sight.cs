@@ -86,7 +86,7 @@ public class Sight : MonoBehaviour
         m_checkSightHandle = StartCoroutine(CheckSight());
     }
 
-    void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position + m_pivot, m_range);
@@ -101,10 +101,7 @@ public class Sight : MonoBehaviour
             if (target == null) continue;
             Gizmos.DrawLine(transform.position + m_pivot, target.transform.position);
         }
-    }
 
-    private void OnDrawGizmosSelected()
-    {
         Gizmos.color = Color.black;
         Vector3 size = Vector3.one * 0.04f;
         foreach (Vector3 v in debugSearchList)
