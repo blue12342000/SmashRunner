@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SMBAttack : EnemyBehaviour
+public class SMBAttack : SMBBase
 {
     IAttack m_attack;
 

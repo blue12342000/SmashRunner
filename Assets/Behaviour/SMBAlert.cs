@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SMBAlert : EnemyBehaviour
+public class SMBAlert : SMBBase
 {
     IDetect m_detect;
 

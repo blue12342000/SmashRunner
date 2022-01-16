@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SMBIdle : EnemyBehaviour
+public class SMBIdle : SMBBase
 {
     [SerializeField]
     int m_idleCount;

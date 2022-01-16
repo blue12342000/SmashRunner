@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SMBSeek: EnemyBehaviour
+public class SMBSeek: SMBBase
 {
     ISeek m_seek;
 

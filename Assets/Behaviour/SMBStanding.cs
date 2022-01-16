@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SMBStanding : EnemyBehaviour
+public class SMBStanding : SMBBase
 {
     IDetect m_detect;
     Quaternion m_destAngle;

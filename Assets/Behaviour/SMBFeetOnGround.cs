@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SMBFeetOnGround : StateMachineBehaviour
+public class SMBFeetOnGround : SMBBase
 {
     [SerializeField]
     Vector3 m_leftFootPivot;

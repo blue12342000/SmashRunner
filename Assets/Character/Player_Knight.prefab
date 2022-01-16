@@ -1139,8 +1139,9 @@ GameObject:
   - component: {fileID: 3133343871090363856}
   - component: {fileID: 3133343871090363692}
   - component: {fileID: 3133343871090363693}
+  - component: {fileID: 7223962652305964568}
   m_Layer: 0
-  m_Name: Character_Knight_01_Black
+  m_Name: Player_Knight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1230,6 +1231,11 @@ MonoBehaviour:
   m_attackDamage: 1
   m_hp: 1
   m_maxHp: 1
+  m_jumpDistance: 0
+  m_timeScale: 0
+  m_moveSpeed: 0
+  m_movement: {fileID: 0}
+  m_path: {fileID: 0}
 --- !u!114 &3133343871090363693
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1242,16 +1248,49 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30d34fb0beb033143a540185f7dddc73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_pivot: {x: 0, y: 0, z: 0}
+  m_pivot: {x: 0, y: 1, z: 0}
   m_range: 5
   m_fov: 90
   m_pricision: 0.1
-  m_alertLayer:
+  m_detectLayer:
     serializedVersion: 2
     m_Bits: 576
   m_blockLayer:
     serializedVersion: 2
     m_Bits: 1024
+--- !u!114 &7223962652305964568
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3133343870728839870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 251116972a0db3d4e94079c0c3960b68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_collider:
+    Type: 0
+    Center: {x: 0, y: 0, z: 0}
+    Param: {x: 1, y: 1, z: 1}
+  Character: {fileID: 3133343871090363857}
+  m_timeScale: 0
+  m_isUseGravity: 1
+  m_gravityAcceleration: 10
+  m_collisionLayer:
+    serializedVersion: 2
+    m_Bits: 1024
+  m_velocity: {x: 0, y: 0, z: 0}
+  m_jumpEstimate: 0
+  m_jumpDistance: 4
+  m_jumpMinAngle: 55
+  m_jumpForce: 60
+  m_trailPath: {fileID: 0}
+  m_moveInfo:
+    Position: {x: 0, y: 0, z: 0}
+    Rotation: {x: 0, y: 0, z: 0, w: 0}
+    Distance: 0
 --- !u!1 &3133343870728842144
 GameObject:
   m_ObjectHideFlags: 0

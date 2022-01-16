@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SMBReload : EnemyBehaviour
+public class SMBReload : SMBBase
 {
     IReload m_reload;
     public override void OnInitialize(MonoBehaviour target)

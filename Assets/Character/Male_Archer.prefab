@@ -2238,16 +2238,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30d34fb0beb033143a540185f7dddc73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_pivot: {x: 0, y: 0, z: 0}
+  m_pivot: {x: 0, y: 1, z: 0}
   m_range: 20
   m_fov: 50
   m_pricision: 0.1
-  m_alertLayer:
+  m_detectLayer:
     serializedVersion: 2
     m_Bits: 128
   m_blockLayer:
     serializedVersion: 2
-    m_Bits: 1024
+    m_Bits: 65
 --- !u!1 &4412930777550331990
 GameObject:
   m_ObjectHideFlags: 0

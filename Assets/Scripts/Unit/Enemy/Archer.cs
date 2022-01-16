@@ -64,7 +64,7 @@ public class Archer : Enemy, ISeek, IDetect, ICatch, IAttack, IReload
     {
         m_sight = GetComponent<Sight>();
         m_animator = GetComponent<Animator>();
-        m_animator?.GetBehaviours<EnemyBehaviour>().Initialize(this);
+        m_animator?.GetBehaviours<SMBBase>().Initialize(this);
         m_initSpineAngle = m_animator.GetBoneTransform(HumanBodyBones.Spine).localRotation;
     }
 

@@ -6,7 +6,7 @@ using System.Linq;
 public class OptimizePolygon : MonoBehaviour
 {
     [System.Flags]
-    enum Option
+    enum EOption
     {
         None = 0,
         SufaceNormal = 1,
@@ -17,10 +17,10 @@ public class OptimizePolygon : MonoBehaviour
     struct OptionFlags
     {
         [SerializeField]
-        Option m_flags;
-        static readonly List<Option> flags = new List<Option>(System.Enum.GetValues(typeof(OptimizePolygon.Option)).Cast<Option>());
+        EOption m_flags;
+        static readonly List<EOption> flags = new List<EOption>(System.Enum.GetValues(typeof(OptimizePolygon.EOption)).Cast<EOption>());
 
-        public Option Flags => m_flags;
+        public EOption Flags => m_flags;
         public int Value
         {
             get
@@ -115,7 +115,7 @@ public class OptimizePolygon : MonoBehaviour
                     // vertex normals
                     if (!vertexNormalMap.ContainsKey(vertices[vtxIndex])) { vertexNormalMap.Add(vertices[vtxIndex], new HashSet<Vector3>()); }
                     
-                    if ((m_optionFlags.Flags & Option.SufaceNormal) > 0)
+                    if ((m_optionFlags.Flags & EOption.SufaceNormal) > 0)
                     {
                         // Surface Normal
                         vertexNormalMap[vertices[vtxIndex]].Add(sufNormal);
@@ -134,7 +134,7 @@ public class OptimizePolygon : MonoBehaviour
             }
         }
 
-        if ((m_optionFlags.Flags & Option.SmoothNormal) > 0)
+        if ((m_optionFlags.Flags & EOption.SmoothNormal) > 0)
         {
             // Smooth Normal
             foreach (var sv in sameVertices)

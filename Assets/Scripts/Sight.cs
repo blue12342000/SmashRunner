@@ -35,7 +35,7 @@ public class Sight : MonoBehaviour
     [Range(0.1f, 1)]
     float m_pricision = 0.1f;
     [SerializeField]
-    LayerMask m_alertLayer;
+    LayerMask m_detectLayer;
     [SerializeField]
     LayerMask m_blockLayer;
 
@@ -177,7 +177,7 @@ public class Sight : MonoBehaviour
 
             m_compareMoreClose.Point = transform.position;
             ray.origin = transform.position + m_pivot;
-            foreach (var collider in Physics.OverlapSphere(transform.position + m_pivot, m_range, m_alertLayer))
+            foreach (var collider in Physics.OverlapSphere(transform.position + m_pivot, m_range, m_detectLayer))
             {
                 if (collider.gameObject == gameObject) continue;
 
