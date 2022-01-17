@@ -4,6 +4,10 @@ using UnityEngine;
 
 public abstract class MovementBase : MonoBehaviour
 {
+    public const float LIMIT_MIN_JUMP_DEGREE = 10;
+    public const float LIMIT_MAX_JUMP_DEGREE = 80;
+    public const float DEFAULT_JUMP_DEGREE = 60;
+
     public enum ECollider
     {
         Box,        // center, x, y, z
@@ -21,7 +25,7 @@ public abstract class MovementBase : MonoBehaviour
     {
         Distance,
         Angle,
-        Force
+        Velocity
     }
 
     [System.Serializable]
@@ -33,14 +37,23 @@ public abstract class MovementBase : MonoBehaviour
     }
 
     [System.Serializable]
-    public struct MoveInfo
+    public struct MovementData
     {
         // 위치
         public Vector3 Position;
-        // 방향
+        // 도착 했을때 방향
         public Quaternion Rotation;
-        // 총 이동거리
-        public float Distance;
+        // 목적지 바라보는 방향
+        public Quaternion LookAt;
+        // 점프
+        public JumpData Jump;
+    }
+
+    [System.Serializable]
+    public struct JumpData
+    {
+        public Vector3 Velocity;
+        public float Time;
     }
 
     [SerializeField]
@@ -65,7 +78,7 @@ public abstract class MovementBase : MonoBehaviour
     [SerializeField]
     protected float m_jumpDistance = 4;
     [SerializeField]
-    [Range(10, 80)]
+    [Range(LIMIT_MIN_JUMP_DEGREE, LIMIT_MAX_JUMP_DEGREE)]
     protected float m_jumpMinAngle = 60;
     [SerializeField]
     protected float m_jumpVelocity = 0;
@@ -79,13 +92,56 @@ public abstract class MovementBase : MonoBehaviour
     public EJumpEstimate JumpEstimate => m_jumpEstimate;
     public virtual bool IsGround => false;
     public virtual float TimeScale => 1;
+    public double Gravity => m_gravityAcceleration;
+
+    public static float LongJumpDegree
+    { 
+        get
+        {
+            if (45 < LIMIT_MIN_JUMP_DEGREE)
+            {
+                return LIMIT_MIN_JUMP_DEGREE;
+            }
+            else if (LIMIT_MAX_JUMP_DEGREE < 45)
+            {
+                return LIMIT_MAX_JUMP_DEGREE;
+            }
+            else
+            {
+                return 45;
+            }
+        }
+    }
+
+    public static float ShortJumpDegree
+    {
+        get
+        {
+            if (45 < LIMIT_MIN_JUMP_DEGREE)
+            {
+                return LIMIT_MAX_JUMP_DEGREE;
+            }
+            else if (LIMIT_MAX_JUMP_DEGREE < 45)
+            {
+                return LIMIT_MIN_JUMP_DEGREE;
+            }
+            else
+            {
+                if (LIMIT_MIN_JUMP_DEGREE < 90 - LIMIT_MAX_JUMP_DEGREE) { return LIMIT_MIN_JUMP_DEGREE; }
+                else { return LIMIT_MAX_JUMP_DEGREE; }
+            }
+        }
+    }
+
+    public static float LongJumpAngle => LongJumpDegree * Mathf.Deg2Rad;
+    public static float ShortJumpAngle => ShortJumpDegree * Mathf.Deg2Rad;
 
     // 방향으로 Velocity만큼 이동
     public abstract void Move(Vector3 velocity);
-    // 목적지를 계산 후 Move(Velocity) 호출
-    public abstract void JumpTo(Vector3 direction, float angle, float distance);
+    // Foward Jump
+    public abstract void Jump(float distance);
     // 예상 위치 정보 계산
-    public abstract MoveInfo CalculateEstimatedPoint(Vector3 direction, float distance);
+    public abstract MovementData CalculateEstimated(float distance);
 
     public bool PhysicsCast()
     {

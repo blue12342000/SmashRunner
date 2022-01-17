@@ -28,7 +28,7 @@ public static class ExtensionMethod
         return origin;
     }
 
-    public static Vector3 Freeze(this Vector3 point, bool x, bool y, bool z)
+    public static Vector3 Zero(this Vector3 point, bool x, bool y, bool z)
     {
         if (x) point.x = 0;
         if (y) point.y = 0;
@@ -36,11 +36,47 @@ public static class ExtensionMethod
         return point;
     }
 
-    public static Quaternion Freeze(this Quaternion rotate, bool x, bool y, bool z)
+    public static Vector3 ZeroX(this Vector3 point)
+    {
+        point.x = 0;
+        return point;
+    }
+
+    public static Vector3 ZeroY(this Vector3 point)
+    {
+        point.y = 0;
+        return point;
+    }
+
+    public static Vector3 ZeroZ(this Vector3 point)
+    {
+        point.z = 0;
+        return point;
+    }
+
+    public static Quaternion Zero(this Quaternion rotate, bool x, bool y, bool z)
     {
         if (x) rotate.x = 0;
         if (y) rotate.y = 0;
         if (z) rotate.z = 0;
+        return rotate;
+    }
+
+    public static Quaternion ZeroX(this Quaternion rotate)
+    {
+        rotate.x = 0;
+        return rotate;
+    }
+
+    public static Quaternion ZeroY(this Quaternion rotate)
+    {
+        rotate.y = 0;
+        return rotate;
+    }
+
+    public static Quaternion ZeroZ(this Quaternion rotate)
+    {
+        rotate.z = 0;
         return rotate;
     }
 
@@ -65,11 +101,5 @@ public static class ExtensionMethod
         {
             behaviours[i].OnInitialize(target);
         }
-    }
-
-    public static void SetMoveInfo(this Transform transform, MovementBase.MoveInfo moveInfo)
-    {
-        transform.position = moveInfo.Position;
-        transform.rotation = moveInfo.Rotation;
     }
 }

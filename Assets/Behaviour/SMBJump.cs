@@ -47,8 +47,8 @@ public class SMBJump : SMBBase
     Vector3 m_groundPoint;
 
     IMovement m_movement;
-    MovementBase.MoveInfo m_currMoveInfo;
-    MovementBase.MoveInfo m_destMoveInfo;
+    MovementBase.MovementData m_currMoveInfo;
+    MovementBase.MovementData m_destMoveInfo;
     Quaternion m_rotationToDest;
 
     public override void OnInitialize(MonoBehaviour target)

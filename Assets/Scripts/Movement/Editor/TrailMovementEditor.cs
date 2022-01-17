@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine.UIElements;
 using UnityEditor.AnimatedValues;
 using System.Linq;
+using System.Text;
 
 [CustomEditor(typeof(TrailMovement))]
 [CanEditMultipleObjects]
@@ -45,7 +46,7 @@ public class TrailMovementEditor : Editor
     double m_elapsedTime = 0f;
     double m_prevTime = 0f;
     double m_deltaTime = 0f;
-    List<IEnumerator> m_coroutines = new List<IEnumerator>();
+    List<IEnumerator> m_simulates = new List<IEnumerator>();
 
     private void OnEnable()
     {
@@ -89,7 +90,7 @@ public class TrailMovementEditor : Editor
         m_prevTime = 0;
         m_elapsedTime = 0;
         m_offsetTime = 0;
-        m_coroutines.Clear();
+        m_simulates.Clear();
     }
 
     private void OnUpdate()
@@ -97,17 +98,6 @@ public class TrailMovementEditor : Editor
         m_prevTime = m_elapsedTime;
         m_elapsedTime = EditorApplication.timeSinceStartup - m_offsetTime;
         m_deltaTime = m_elapsedTime - m_prevTime;
-        for (int i = 0; i < m_coroutines.Count;)
-        {
-            if (!m_coroutines[i].MoveNext())
-            {
-                m_coroutines.RemoveAt(i);
-            }
-            else
-            {
-                ++i;
-            }
-        }
     }
 
     protected void OnDebugInspectorGUI()
@@ -195,17 +185,18 @@ public class TrailMovementEditor : Editor
             EditorGUI.indentLevel++;
             EditorGUILayout.PropertyField(m_trailPath, m_labelPath);
 
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.PropertyField(m_isUseGravity);
-            GUI.enabled = m_isUseGravity.boolValue;
-            EditorGUILayout.PropertyField(m_gravityAcceleration, m_labelGravity);
-            GUI.enabled = true;
-            EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.PropertyField(m_collisionLayer);
-            EditorGUILayout.PropertyField(m_jumpEstimate);
             if (!m_jumpEstimate.hasMultipleDifferentValues)
             {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.PropertyField(m_isUseGravity);
+                GUI.enabled = m_isUseGravity.boolValue;
+                EditorGUILayout.PropertyField(m_gravityAcceleration, m_labelGravity);
+                GUI.enabled = true;
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.PropertyField(m_collisionLayer);
+                EditorGUILayout.PropertyField(m_jumpEstimate);
+
                 EditorGUI.indentLevel++;
                 int jumpType = m_jumpEstimate.enumValueIndex;
                 switch (jumpType)
@@ -219,6 +210,15 @@ public class TrailMovementEditor : Editor
                     //case MovementBase.EJumpEstimate.Angle:
                         EditorGUILayout.PropertyField(m_jumpDistance, m_labelDistance);
                         EditorGUILayout.PropertyField(m_jumpVelocity, m_labelVelocity);
+                        {
+                            EditorGUI.indentLevel++;
+                            float velocity = m_jumpVelocity.floatValue;
+                            float gravity = m_gravityAcceleration.floatValue;
+                            float minDistance = 2 * velocity * velocity * Mathf.Sin(MovementBase.ShortJumpAngle) * Mathf.Cos(MovementBase.ShortJumpAngle) / gravity;
+                            float maxDistance = 2 * velocity * velocity * Mathf.Sin(MovementBase.LongJumpAngle) * Mathf.Cos(MovementBase.LongJumpAngle) / gravity;
+                            EditorGUILayout.LabelField($"* Possible Distance {minDistance.ToString("0.0")} ~ {maxDistance.ToString("0.0")}");
+                            EditorGUI.indentLevel--;
+                        }
                         break;
                     case 2:
                     //case MovementBase.EJumpEstimate.Force:
@@ -241,8 +241,13 @@ public class TrailMovementEditor : Editor
             if (GUILayout.Button("Simulate Jump", GUILayout.Height(30)))
             {
                 SimulationStart();
+                foreach (var t in m_targets)
+                {
+                    var move = t.CalculateEstimated(8);
+                    m_simulates.Add(Simulation(t, move.Jump.Velocity, move.Jump.Time));
+                }
+
                 m_isOnSimulate = true;
-                m_targets[0].CalculateEstimatedPoint(Vector3.forward * 40, 4);
             }
         }
         else
@@ -317,7 +322,7 @@ public class TrailMovementEditor : Editor
 
         GUILayout.BeginHorizontal();
         GUILayout.Space(20);
-        GUILayout.Label("delta Time:");
+        GUILayout.Label("Delta Time:");
         m_labelStyle.alignment = TextAnchor.MiddleRight;
         GUILayout.Label($"{m_deltaTime.ToString("0.000")}", m_labelStyle);
         GUILayout.Space(20);
@@ -327,11 +332,57 @@ public class TrailMovementEditor : Editor
         GUILayout.EndArea();
         Handles.EndGUI();
 
+        if (m_isOnSimulate)
+        {
+            for (int i = 0; i < m_simulates.Count;)
+            {
+                if (!m_simulates[i].MoveNext())
+                {
+                    m_simulates.RemoveAt(i);
+                }
+                else
+                {
+                    ++i;
+                }
+            }
+        }
+
         sceneView.Repaint();
     }
 
-    private IEnumerator Simulation(TrailMovement target)
+    private IEnumerator Simulation(TrailMovement target, Vector3 velocity, float time)
     {
         yield return null;
+
+        StringBuilder builder = new StringBuilder();
+
+        builder.AppendLine($"velocity : {velocity}, time : {time}");
+        builder.AppendLine($"Position : {target.transform.position}");
+
+        Debug.LogWarning(builder);
+        var targetMatrix = Matrix4x4.TRS(target.transform.position, target.transform.rotation, Handles.matrix.lossyScale);
+
+        int loop = 100;
+        while (loop-- > 0)
+        {
+            Vector3 v = velocity;
+            double t = 0;
+            Vector3 p = Vector3.zero;
+
+            while (t < time)
+            {
+                t += m_deltaTime;
+                v.y -= (float)target.Gravity * (float)m_deltaTime;
+                p += v * (float)m_deltaTime;
+
+                var matrix = Handles.matrix;
+                Handles.matrix = targetMatrix;
+                Handles.DrawLine(Vector3.zero, velocity);
+                Handles.DrawWireCube(p, Vector3.one * 0.1f);
+                Handles.matrix = matrix;
+                yield return null;
+            }
+            yield return null;
+        }
     }
 }

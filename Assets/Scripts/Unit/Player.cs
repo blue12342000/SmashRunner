@@ -14,7 +14,6 @@ public interface IMovement
     void AddForce(Vector3 direction, float angle, float distance);
 }
 
-[ExecuteInEditMode]
 public class Player : Unit, IHitable, IMovement//, ITrailMovement
 {
     static readonly int m_hashJump = Animator.StringToHash("Jump");

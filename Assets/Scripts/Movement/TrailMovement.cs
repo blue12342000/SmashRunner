@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using Cinemachine;
+using System.Text;
 
 public class TrailMovement : MovementBase
 {
@@ -11,7 +12,7 @@ public class TrailMovement : MovementBase
     CinemachinePathBase.PositionUnits m_positionUnit = CinemachinePathBase.PositionUnits.Distance;
     float m_position;
     [SerializeField]
-    MoveInfo m_moveInfo;
+    MovementData m_moveInfo;
 
     public override void Move(Vector3 velocity)
     {
@@ -27,15 +28,14 @@ public class TrailMovement : MovementBase
         //return Move(velocity.normalized, velocity.Freeze(false, true, false).magnitude);
     }
 
-    public override void JumpTo(Vector3 direction, float angle, float distance)
+    public override void Jump(float distance)
     {
         m_isFalling = false;
         m_isJumping = true;
 
         // 위치 계산
         // 최소 Angle을 통해 
-        direction = direction.Freeze(false, true, false).normalized;
-        CalculateEstimatedPoint(direction, distance);
+        CalculateEstimated(distance);
         // 해당 위치로의 
 
         //MoveInfo output;
@@ -51,14 +51,50 @@ public class TrailMovement : MovementBase
         //return output;
     }
 
-    public override MoveInfo CalculateEstimatedPoint(Vector3 direction, float distance)
+    // Degree * 100 을 입력값으로 받음
+    int BinearySearchDegree(int shortJumpDegree, int longJumpDegree, float scale, float distanceXZ, float diffY)
     {
-        if (m_trailPath == null) return default;
+        if (Mathf.Abs(shortJumpDegree - longJumpDegree) < 2) { return longJumpDegree; }
+
+        int midDegree = (shortJumpDegree + longJumpDegree) / 2;
+        float midAngle = scale * midDegree * Mathf.Deg2Rad;
+
+        float velocityXZ = m_jumpVelocity * Mathf.Cos(midAngle);
+        float height = distanceXZ * Mathf.Tan(midAngle) + diffY;
+        float time = Mathf.Sqrt(2 * height / m_gravityAcceleration);
+        float currDistanceXZ = velocityXZ * time;
+
+        if (Mathf.Abs(currDistanceXZ - distanceXZ) < float.Epsilon)
+        {
+            return midDegree;
+        }
+        else if (distanceXZ < currDistanceXZ)
+        {
+            // new velocity too fast
+            return BinearySearchDegree(shortJumpDegree, midDegree, scale, distanceXZ, diffY);
+        }
+        else
+        {
+            // new velocity to slow
+            return BinearySearchDegree(midDegree, longJumpDegree, scale, distanceXZ, diffY);
+        }
+    }
+
+    float FindAngle(int shortJumpDegree, int longJumpDegree, int precision, float distanceXZ, float diffY)
+    {
+        return Mathf.Deg2Rad * BinearySearchDegree(shortJumpDegree * precision, longJumpDegree * precision, 1f / precision, distanceXZ, diffY) / precision;
+    }
+
+    public override MovementData CalculateEstimated(float distance)
+    {
+        MovementData output = default;
+        if (m_trailPath == null) return output;
+        distance = m_jumpDistance;
         m_positionUnit = CinemachinePathBase.PositionUnits.Distance;
-        MoveInfo output;
-        output.Distance = m_trailPath.StandardizeUnit(m_position + distance, m_positionUnit);
-        output.Position = (m_trailPath.EvaluatePositionAtUnit(output.Distance, m_positionUnit)+Vector3.up).RayCast(Vector3.down, m_collisionLayer.value);
-        output.Rotation = m_trailPath.EvaluateOrientationAtUnit(output.Distance, m_positionUnit).Freeze(false, true, false);
+
+        distance = m_trailPath.StandardizeUnit(m_position + distance, m_positionUnit);
+        output.Position = (m_trailPath.EvaluatePositionAtUnit(distance, m_positionUnit) + Vector3.up * 0.2f).RayCast(Vector3.down, m_collisionLayer.value);
+        output.Rotation = m_trailPath.EvaluateOrientationAtUnit(distance, m_positionUnit).ZeroY();
 
         /*
         1. 시작지점과 도착지점의 Y값이 큰 쪽을 기준으로 삼음
@@ -66,51 +102,68 @@ public class TrailMovement : MovementBase
         3. 축에 거리를 투영해서 실제 Forward 벡터 구함
         4. 축에 투영한 거리만큼이 예상 시간
         */
-        // velocity 예측할 땐 시간도 예측해야함.
+        // velocity 예측할 땐 시간도 예측해야함. => 시간을 forward.magnitude / distance; 로 해본다
         // angle 예측할 땐 velocity의 속력으로 거리까지 x속도 구해야함
         // angle 을 예측하는 것은 최소 최대값이 구해짐
-        Vector3 dest = output.Position - transform.position;
-        Vector3 vForward = Vector3.ProjectOnPlane(dest, Vector3.up);
-        float time = vForward.magnitude;
+        // distance 예측할 땐
 
-        Vector3 vUp = Vector3.up * vForward.magnitude * Mathf.Tan(m_jumpMinAngle * Mathf.Deg2Rad);
-        float jumpTime = 2 * vUp.y / m_gravityAcceleration;
-        Vector3 gapVForward = vForward * (time - jumpTime);
-        Vector3 gapVUp = Vector3.up * Mathf.Abs(dest.y) / (time - jumpTime);
+        Vector3 vTarget = output.Position - transform.position;
+        Vector3 vForward = vTarget.ZeroY();
+        output.LookAt = Quaternion.FromToRotation(Vector3.forward, vForward.normalized);
 
-        m_velocity = gapVUp + gapVForward;
-        float velocity = (m_velocity / (time - jumpTime) * time).magnitude;
-        float jumpAngle = Mathf.Atan(gapVUp.y / (time - jumpTime));
-
-        Debug.Log($"distance : {m_position + distance}");
-        Debug.Log($"output.Distance : {output.Distance}");
-        Debug.Log($"origin = {transform.position}, dest = {output.Position}");
-        Debug.Log($"total time : {time}");
-        Debug.Log($"jump Time : {jumpTime}");
-        Debug.Log($"==================================");
-        Debug.Log($"Angle : {jumpAngle}, Degree : {jumpAngle * Mathf.Rad2Deg}, Min Degree : {m_jumpMinAngle}");
-        Debug.Log($"velocity : {velocity}");
-        Debug.Log($"angle * velocity : { Mathf.Sin(jumpAngle) * Vector3.up + vForward.normalized * Mathf.Cos(jumpAngle)}");
-        Debug.Log($"m_velocity : {m_velocity / (time - jumpTime) * time}");
-        Debug.Log($"vForward : {vForward}");
-        Debug.Log($"Proj Forward : {Vector3.ProjectOnPlane(m_velocity, Vector3.up)}");
+        float distanceXZ = vForward.magnitude;
 
         switch (m_jumpEstimate)
         {
-            case EJumpEstimate.Distance:
-                {
-                    
-                }
-                break;
             case EJumpEstimate.Angle:
                 {
+                    // Param Velocity, Distance
+                    // MinDistance Degree 10, 80 / MaxDistance Degree 45
+                    // May Not Between Min.D And Max.D, Angle 45 Fixed And Calculate Velocity
+                    float maxAngle = LongJumpAngle, minAngle = ShortJumpAngle;
+                    float maxVelocityY = m_jumpVelocity * Mathf.Sin(maxAngle);
+                    float maxVelocityXZ = m_jumpVelocity * Mathf.Cos(maxAngle);
+                    float maxDistance = maxVelocityXZ * 2 * maxVelocityY / m_gravityAcceleration;
 
+                    float minVelocityY = m_jumpVelocity * Mathf.Sin(minAngle);
+                    float minVelocityXZ = m_jumpVelocity * Mathf.Cos(minAngle);
+                    float minDistance = minVelocityXZ * 2 * minVelocityY / m_gravityAcceleration;
+
+                    if (distanceXZ < minDistance || maxDistance < distanceXZ)
+                    {
+                        // Impossible Fixed Degree 45 And Calculate Velocity
+                        float distanceY = Mathf.Tan(DEFAULT_JUMP_DEGREE * Mathf.Deg2Rad) * distanceXZ;
+                        float height = distanceY + Mathf.Abs(vTarget.y);
+                        float time = Mathf.Sqrt(2 * height / m_gravityAcceleration);
+
+                        output.Jump.Velocity = vForward.normalized * distanceXZ / time;
+                        output.Jump.Velocity.y = height / time;
+                        output.Jump.Time = time;
+                    }
+                    else
+                    {
+                        // Possible
+                        // min ~ max
+                        float angle = FindAngle((int)ShortJumpDegree, (int)(LongJumpDegree), 100, distanceXZ, Mathf.Abs(vTarget.y));
+                        output.Jump.Velocity = vForward.normalized * m_jumpVelocity * Mathf.Cos(angle);
+                        output.Jump.Velocity.y = m_jumpVelocity * Mathf.Sin(angle);
+                        output.Jump.Time = distanceXZ / (m_jumpVelocity * Mathf.Cos(angle));
+                    }
                 }
                 // jumpAngle = Mathf.Acos(m_gravityAcceleration * m_jumpDistance * 0.5f / (jumpForce * jumpForce));
                 break;
-            case EJumpEstimate.Force:
+            case EJumpEstimate.Distance:
+            case EJumpEstimate.Velocity:
                 {
-                    
+                    // Param Angle / distance
+                    // vTarget Proj Axis X,Z 
+                    float distanceY = Mathf.Tan(m_jumpMinAngle * Mathf.Deg2Rad) * distanceXZ;
+                    float height = distanceY + Mathf.Abs(vTarget.y);
+                    float time = Mathf.Sqrt(2 * height / m_gravityAcceleration);
+
+                    output.Jump.Velocity = vForward.normalized * distanceXZ / time;
+                    output.Jump.Velocity.y = height / time;
+                    output.Jump.Time = time;
                 }
                 // jumpForce = Mathf.Sqrt(m_jumpDistance * m_gravityAcceleration * 0.5f / (Mathf.Sin(jumpAngle) * Mathf.Cos(jumpAngle) * Mathf.Cos(jumpAngle)));
                 break;
