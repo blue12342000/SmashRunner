@@ -26,6 +26,8 @@ public class TrailMovementEditor : Editor
     SerializedProperty m_velocity;
     SerializedProperty m_isFalling;
     SerializedProperty m_trailPath;
+    SerializedProperty m_positionUnit;
+    SerializedProperty m_pathPositoin;
 
     bool m_IsOpenCollider = true;
     bool m_IsOpenConfig = true;
@@ -64,6 +66,8 @@ public class TrailMovementEditor : Editor
         m_collisionLayer = serializedObject.FindProperty("m_collisionLayer");
 
         m_trailPath = serializedObject.FindProperty("m_trailPath");
+        m_positionUnit = serializedObject.FindProperty("m_positionUnit");
+        m_pathPositoin = serializedObject.FindProperty("m_pathPositoin");
 
         m_velocity = serializedObject.FindProperty("m_velocity");
         m_isFalling = serializedObject.FindProperty("m_isFalling");
@@ -159,8 +163,8 @@ public class TrailMovementEditor : Editor
                     //case MovementBase.ECollider.Capsule:
                         {
                             Vector3 param = m_collider.FindPropertyRelative("Param").vector3Value;
-                            param.y = Mathf.Max(EditorGUILayout.FloatField("Radius", param.y), 0);
-                            param.x = Mathf.Max(EditorGUILayout.FloatField("Height", param.x), param.y * 2);
+                            param.x = Mathf.Max(EditorGUILayout.FloatField("Radius", param.x), 0);
+                            param.y = Mathf.Max(EditorGUILayout.FloatField("Height", param.y), param.x * 2);
                             m_collider.FindPropertyRelative("Param").vector3Value = param;
                         }
                         break;
@@ -183,20 +187,36 @@ public class TrailMovementEditor : Editor
         if (m_IsOpenConfig)
         {
             EditorGUI.indentLevel++;
+
             EditorGUILayout.PropertyField(m_trailPath, m_labelPath);
+            if (!m_trailPath.hasMultipleDifferentValues)
+            {
+                GUI.enabled = false;
+                EditorGUILayout.PropertyField(m_positionUnit);
+                GUI.enabled = true;
+                EditorGUI.BeginChangeCheck();
+                EditorGUILayout.Slider(m_pathPositoin, m_targets[0].StartPosition, m_targets[0].EndPosition);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    float pathPosition = m_pathPositoin.floatValue;
+                    foreach (var t in m_targets)
+                    {
+                        t.SetPathPosition(pathPosition);
+                    }
+                }
+            }    
+
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.PropertyField(m_isUseGravity);
+            GUI.enabled = m_isUseGravity.boolValue;
+            EditorGUILayout.PropertyField(m_gravityAcceleration, m_labelGravity);
+            GUI.enabled = true;
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.PropertyField(m_collisionLayer);
+            EditorGUILayout.PropertyField(m_jumpEstimate);
 
             if (!m_jumpEstimate.hasMultipleDifferentValues)
             {
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.PropertyField(m_isUseGravity);
-                GUI.enabled = m_isUseGravity.boolValue;
-                EditorGUILayout.PropertyField(m_gravityAcceleration, m_labelGravity);
-                GUI.enabled = true;
-                EditorGUILayout.EndHorizontal();
-
-                EditorGUILayout.PropertyField(m_collisionLayer);
-                EditorGUILayout.PropertyField(m_jumpEstimate);
-
                 EditorGUI.indentLevel++;
                 int jumpType = m_jumpEstimate.enumValueIndex;
                 switch (jumpType)
@@ -243,7 +263,7 @@ public class TrailMovementEditor : Editor
                 SimulationStart();
                 foreach (var t in m_targets)
                 {
-                    var move = t.CalculateEstimated(8);
+                    var move = t.Jump();
                     m_simulates.Add(Simulation(t, move.Jump.Velocity, move.Jump.Time));
                 }
 
@@ -279,8 +299,8 @@ public class TrailMovementEditor : Editor
                     break;
                 case MovementBase.ECollider.Capsule:
                     {
-                        float radius = t.Collider.Param.y;
-                        float halfHeight = Mathf.Max(t.Collider.Param.x - radius * 2f, 0);
+                        float radius = t.Collider.Param.x;
+                        float halfHeight = Mathf.Max(t.Collider.Param.y - radius * 2f, 0);
                         Vector3 forward = Vector3.forward * radius;
                         Vector3 right = Vector3.right * radius;
                         Vector3 up = Vector3.up * halfHeight * 0.5f;
@@ -356,11 +376,8 @@ public class TrailMovementEditor : Editor
 
         StringBuilder builder = new StringBuilder();
 
-        builder.AppendLine($"velocity : {velocity}, time : {time}");
-        builder.AppendLine($"Position : {target.transform.position}");
-
         Debug.LogWarning(builder);
-        var targetMatrix = Matrix4x4.TRS(target.transform.position, target.transform.rotation, Handles.matrix.lossyScale);
+        var targetMatrix = Matrix4x4.TRS(target.transform.position, Quaternion.identity, Handles.matrix.lossyScale);
 
         int loop = 100;
         while (loop-- > 0)

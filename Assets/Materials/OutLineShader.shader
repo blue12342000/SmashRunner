@@ -48,6 +48,7 @@ Shader "Unlit/OutLineShader"
                 o.vertex = UnityObjectToClipPos(v.vertex + (v.normal + v.tangent.xyz * v.tangent.w) * outline);
                 o.uv_OutlineTex = v.texcoord1.xy;
 
+                o.color = float4(0, 0, 0, 0);
                 float dist = distance(_WorldSpaceCameraPos, mul(unity_ObjectToWorld, v.vertex)) / _ActiveRadius - 1;
                 if (dist < 0) { o.color.a = 1; }
                 else if (dist < 1) { o.color.a = 1 - dist; }

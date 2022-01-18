@@ -23,19 +23,24 @@ public class CameraActionController : MonoBehaviour
         m_camAnimator.SetInteger(m_hashCamIndex, index);
     }
 
-    public void RightCanZoomInTarget(GameObject target)
+    public void RightCamZoomInTarget(GameObject target)
     {
-        StartCoroutine(ZoomInTarget(target));
+        StartCoroutine(ZoomInTarget(target, 3, 2));
     }
 
-    IEnumerator ZoomInTarget(GameObject target)
+    public void LeftCamZoomInTarget(GameObject target)
     {
-        ChangeActionCam(3);
+        StartCoroutine(ZoomInTarget(target, 3, 1));
+    }
+
+    IEnumerator ZoomInTarget(GameObject target, int from, int to)
+    {
+        ChangeActionCam(from);
         Transform origin = m_virtualCam.LookAt;
         m_virtualCam.LookAt = target.transform;
         yield return new WaitForSecondsRealtime(1.5f);
 
         m_virtualCam.LookAt = origin;
-        ChangeActionCam(2);
+        ChangeActionCam(to);
     }
 }

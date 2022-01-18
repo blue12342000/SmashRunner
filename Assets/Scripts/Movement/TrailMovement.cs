@@ -9,12 +9,22 @@ public class TrailMovement : MovementBase
 {
     [SerializeField]
     CinemachinePathBase m_trailPath;
-    CinemachinePathBase.PositionUnits m_positionUnit = CinemachinePathBase.PositionUnits.Distance;
-    float m_position;
     [SerializeField]
-    MovementData m_moveInfo;
+    CinemachinePathBase.PositionUnits m_positionUnit = CinemachinePathBase.PositionUnits.Distance;
+    [SerializeField]
+    float m_pathPositoin;
 
-    public override void Move(Vector3 velocity)
+    public float StartPosition => 0;
+    public float EndPosition => (m_trailPath == null) ? 0 : m_trailPath.PathLength;
+
+    public void SetPathPosition(float distance)
+    {
+        m_pathPositoin = 0;
+        transform.position = (m_trailPath.EvaluatePositionAtUnit(distance, m_positionUnit) + Vector3.up * 0.2f).RayCast(Vector3.down, m_collisionLayer.value);
+        transform.rotation = m_trailPath.EvaluateOrientationAtUnit(distance, m_positionUnit).Zero(true, false, true);
+    }
+
+    public override MovementData Move(Vector3 velocity)
     {
         m_isFalling = false;
         //if (TrailPath == null) return default;
@@ -26,29 +36,18 @@ public class TrailMovement : MovementBase
         //m_moveInfo.Rotation = output.Rotation = TrailPath.EvaluateOrientationAtUnit(m_moveInfo.Distance, PositionUnit).Freeze(false, true, false);
         //return output;
         //return Move(velocity.normalized, velocity.Freeze(false, true, false).magnitude);
+        return default;
     }
 
-    public override void Jump(float distance)
+    public override MovementData Jump()
     {
         m_isFalling = false;
         m_isJumping = true;
 
-        // 위치 계산
-        // 최소 Angle을 통해 
-        CalculateEstimated(distance);
-        // 해당 위치로의 
+        var moveData = CalculateEstimated(m_jumpDistance);
+        m_velocity = moveData.Jump.Velocity;
 
-        //MoveInfo output;
-        //
-        //Vector3 distance = dest.Position - m_moveInfo.Position;
-        //Vector3 projVelocity = Vector3.Project(velocity, distance.normalized);
-        //
-        //float ratio = projVelocity.magnitude / distance.magnitude;
-        //
-        //output.Position = m_moveInfo.Position += projVelocity;
-        //output.Rotation = Quaternion.FromToRotation(m_moveInfo.Position, dest.Position).Freeze(false, true, false);
-        //output.Distance = m_moveInfo.Distance;
-        //return output;
+        return moveData;
     }
 
     // Degree * 100 을 입력값으로 받음
@@ -92,7 +91,7 @@ public class TrailMovement : MovementBase
         distance = m_jumpDistance;
         m_positionUnit = CinemachinePathBase.PositionUnits.Distance;
 
-        distance = m_trailPath.StandardizeUnit(m_position + distance, m_positionUnit);
+        distance = m_trailPath.StandardizeUnit(m_pathPositoin + distance, m_positionUnit);
         output.Position = (m_trailPath.EvaluatePositionAtUnit(distance, m_positionUnit) + Vector3.up * 0.2f).RayCast(Vector3.down, m_collisionLayer.value);
         output.Rotation = m_trailPath.EvaluateOrientationAtUnit(distance, m_positionUnit).ZeroY();
 
@@ -135,9 +134,10 @@ public class TrailMovement : MovementBase
                         float distanceY = Mathf.Tan(DEFAULT_JUMP_DEGREE * Mathf.Deg2Rad) * distanceXZ;
                         float height = distanceY + Mathf.Abs(vTarget.y);
                         float time = Mathf.Sqrt(2 * height / m_gravityAcceleration);
+                        float velocityXZ = distanceXZ / time;
 
                         output.Jump.Velocity = vForward.normalized * distanceXZ / time;
-                        output.Jump.Velocity.y = height / time;
+                        output.Jump.Velocity.y = velocityXZ * Mathf.Tan(m_jumpMinAngle * Mathf.Deg2Rad);
                         output.Jump.Time = time;
                     }
                     else
@@ -160,9 +160,10 @@ public class TrailMovement : MovementBase
                     float distanceY = Mathf.Tan(m_jumpMinAngle * Mathf.Deg2Rad) * distanceXZ;
                     float height = distanceY + Mathf.Abs(vTarget.y);
                     float time = Mathf.Sqrt(2 * height / m_gravityAcceleration);
+                    float velocityXZ = distanceXZ / time;
 
                     output.Jump.Velocity = vForward.normalized * distanceXZ / time;
-                    output.Jump.Velocity.y = height / time;
+                    output.Jump.Velocity.y = velocityXZ * Mathf.Tan(m_jumpMinAngle * Mathf.Deg2Rad);
                     output.Jump.Time = time;
                 }
                 // jumpForce = Mathf.Sqrt(m_jumpDistance * m_gravityAcceleration * 0.5f / (Mathf.Sin(jumpAngle) * Mathf.Cos(jumpAngle) * Mathf.Cos(jumpAngle)));
