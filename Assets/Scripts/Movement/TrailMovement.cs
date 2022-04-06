@@ -4,18 +4,30 @@ using UnityEngine;
 using UnityEditor;
 using Cinemachine;
 using System.Text;
+using UnityEngine.Events;
 
 public class TrailMovement : MovementBase
 {
     [SerializeField]
+    [HideInInspector]
     CinemachinePathBase m_trailPath;
     [SerializeField]
+    [HideInInspector]
     CinemachinePathBase.PositionUnits m_positionUnit = CinemachinePathBase.PositionUnits.Distance;
     [SerializeField]
+    [HideInInspector]
     float m_pathPositoin;
 
     public float StartPosition => 0;
     public float EndPosition => (m_trailPath == null) ? 0 : m_trailPath.PathLength;
+
+    void Awake()
+    {
+        m_isJumping = false;
+        m_isGround = false;
+        m_isFalling = false;
+        m_velocity = Vector3.zero;
+    }
 
     public void SetPathPosition(float distance)
     {
@@ -26,24 +38,34 @@ public class TrailMovement : MovementBase
 
     public override MovementData Move(Vector3 velocity)
     {
-        m_isFalling = false;
-        //if (TrailPath == null) return default;
-        //MoveInfo output;
+        if (m_trailPath == null) return default;
+
+        MovementData output;
+
+        m_pathPositoin = m_pathPositoin + velocity.magnitude;
+        m_pathPositoin = m_trailPath.StandardizeUnit(m_pathPositoin, m_positionUnit);
+        output.Position = m_trailPath.EvaluatePositionAtUnit(m_pathPositoin, m_positionUnit).RayCast(Vector3.down, m_collisionLayer);
+        //if (PhysicsCast(out RaycastHit hitInfo))
+        //{
+        //
+        //}
+        output.LookAt = output.Rotation = m_trailPath.EvaluateOrientationAtUnit(m_pathPositoin, m_positionUnit).Zero(true, false, true);
+        output.Jump = default;
         //// 이동하게 된 거리
-        //output.Distance = TrailPath.StandardizeUnit(m_moveInfo.Distance + m_timeScale * moveScale, PositionUnit) - m_moveInfo.Distance;
         //m_moveInfo.Distance += output.Distance;
         //m_moveInfo.Position = output.Position = TrailPath.EvaluatePositionAtUnit(m_moveInfo.Distance, PositionUnit).RayCast(Vector3.down, m_collisionLayer.value); ;
         //m_moveInfo.Rotation = output.Rotation = TrailPath.EvaluateOrientationAtUnit(m_moveInfo.Distance, PositionUnit).Freeze(false, true, false);
         //return output;
         //return Move(velocity.normalized, velocity.Freeze(false, true, false).magnitude);
-        return default;
+
+        output.Position.y += 0.001f;
+        transform.position = output.Position;
+        transform.rotation = output.Rotation;
+        return output;
     }
 
     public override MovementData Jump()
     {
-        m_isFalling = false;
-        m_isJumping = true;
-
         var moveData = CalculateEstimated(m_jumpDistance);
         m_velocity = moveData.Jump.Velocity;
 
@@ -173,10 +195,10 @@ public class TrailMovement : MovementBase
         return output;
     }
 
-    public override bool PhysicsCast(Vector3 velocity, out RaycastHit hitInfo)
-    {
-        if (velocity.y > 0) { hitInfo = default; return false; }
-
-        return base.PhysicsCast(velocity, out hitInfo);
-    }
+    //public override bool PhysicsCast(Vector3 velocity, out RaycastHit hitInfo)
+    //{
+    //    if (velocity.y > 0) { hitInfo = default; return false; }
+    //
+    //    return base.PhysicsCast(velocity, out hitInfo);
+    //}
 }

@@ -15,7 +15,7 @@ Shader "Custom/TowerWallShader"
             ColorMask 0
             CGPROGRAM
 
-            #pragma surface surf _NoLight nolight keepalpha noambient noforwardadd nolightmap novertexlights noshadow
+            #pragma surface surf _NoLight keepalpha noambient noforwardadd nolightmap novertexlights noshadow
 
             struct Input
             {
@@ -56,6 +56,7 @@ Shader "Custom/TowerWallShader"
 
                 void surf(Input IN, inout SurfaceOutput o)
                 {
+                    IN.screenPos.w = (IN.screenPos.w < 0.00001) ? 0.00001 : IN.screenPos.w;
                     float2 screenUV = IN.screenPos.xy / IN.screenPos.w;
 
                     fixed4 mask = tex2D(_MaskTex, screenUV);

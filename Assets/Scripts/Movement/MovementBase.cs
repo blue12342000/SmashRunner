@@ -1,18 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public abstract class MovementBase : MonoBehaviour
 {
+    // 물리체크 보정값
+    const float PHYSICS_CAST_MIN_DISTANCE = 0.001f;
     public const float LIMIT_MIN_JUMP_DEGREE = 10;
     public const float LIMIT_MAX_JUMP_DEGREE = 80;
     public const float DEFAULT_JUMP_DEGREE = 60;
 
     public enum ECollider
     {
-        Box,        // center, x, y, z
-        Capsule,    // center, radius, height
-        Sphere      // center, radius
+                    // center / param
+        Box,        // center / x, y, z
+        Capsule,    // center / radius, height
+        Sphere      // center / radius
     }
 
     public enum EUpdateType
@@ -57,40 +61,53 @@ public abstract class MovementBase : MonoBehaviour
     }
 
     [SerializeField]
+    [HideInInspector]
     protected ColliderInfo m_collider;
 
-    [SerializeReference]
-    public CharacterController Character;
-
     [SerializeField]
+    [HideInInspector]
     protected float m_timeScale;
     [SerializeField]
+    [HideInInspector]
     protected bool m_isUseGravity;
     [SerializeField]
+    [HideInInspector]
     protected float m_gravityAcceleration;
     [SerializeField]
+    [HideInInspector]
     protected LayerMask m_collisionLayer;
 
     [SerializeField]
+    [HideInInspector]
     protected Vector3 m_velocity;
     [SerializeField]
+    [HideInInspector]
     protected EJumpEstimate m_jumpEstimate = EJumpEstimate.Distance;
     [SerializeField]
+    [HideInInspector]
     protected float m_jumpDistance = 4;
     [SerializeField]
     [Range(LIMIT_MIN_JUMP_DEGREE, LIMIT_MAX_JUMP_DEGREE)]
+    [HideInInspector]
     protected float m_jumpMinAngle = 60;
     [SerializeField]
+    [HideInInspector]
     protected float m_jumpVelocity = 0;
     [SerializeField]
+    [HideInInspector]
     protected bool m_isFalling;
     [SerializeField]
+    [HideInInspector]
     protected bool m_isGround;
     [SerializeField]
+    [HideInInspector]
     protected bool m_isJumping;
 
     [SerializeField]
+    [HideInInspector]
     MovementData m_current;
+
+    protected event UnityAction m_onPhysicsUpdate;
 
     public ColliderInfo Collider => m_collider;
     public Vector3 Velocity => m_velocity;
@@ -99,6 +116,25 @@ public abstract class MovementBase : MonoBehaviour
     public virtual bool IsGround => m_isGround;
     public virtual float TimeScale => 1;
     public double Gravity => m_gravityAcceleration;
+
+    static int number = 0;
+
+    protected virtual void OnEnable()
+    {
+        m_onPhysicsUpdate += OnPhysicsUpdate;
+        if (m_isUseGravity) StartCoroutine(GravityFlagUpdate());
+    }
+
+    protected virtual void OnDisable()
+    {
+        m_onPhysicsUpdate -= OnPhysicsUpdate;
+        StopAllCoroutines();
+    }
+
+    protected virtual void FixedUpdate()
+    {
+        if (m_onPhysicsUpdate != null) m_onPhysicsUpdate();
+    }
 
     public static float LongJumpDegree
     { 
@@ -149,109 +185,81 @@ public abstract class MovementBase : MonoBehaviour
     // 예상 위치 정보 계산
     public abstract MovementData CalculateEstimated(float distance);
 
-    public bool PhysicsCast()
+    // 움직임 처리
+    void OnPhysicsUpdate()
     {
-        return PhysicsCast(m_velocity, out RaycastHit hitInfo);
-    }
-
-    public bool PhysicsCast(out RaycastHit hitInfo)
-    {
-        return PhysicsCast(m_velocity, out hitInfo);
-    }
-
-    public bool PhysicsCast(Vector3 velocity)
-    {
-        return PhysicsCast(velocity, out RaycastHit hitInfo);
-    }
-
-    public virtual bool PhysicsCast(Vector3 velocity, out RaycastHit hitInfo)
-    {
-        bool isCollision = false;
-        Vector3 center = m_collider.Center + transform.position;
-        switch (m_collider.Type)
+        if (m_isUseGravity)
         {
-            case ECollider.Box:
-                isCollision = Physics.BoxCast(center, m_collider.Param, velocity.normalized, out hitInfo, transform.rotation, velocity.magnitude, m_collisionLayer.value);
-                break;
-            case ECollider.Capsule:
-                {
-                    Vector3 height = transform.up * m_collider.Param.y;
-                    isCollision = Physics.CapsuleCast(center + height, center - height, m_collider.Param.x, velocity.normalized, out hitInfo, velocity.magnitude, m_collisionLayer.value);
-                }
-                break;
-            case ECollider.Sphere:
-                isCollision = Physics.SphereCast(center, m_collider.Param.x, velocity.normalized, out hitInfo, velocity.magnitude, m_collisionLayer.value);
-                break;
-            default:
-                hitInfo = default;
-                break;
+            if (!m_isGround)
+            {
+                m_velocity += Vector3.down * m_gravityAcceleration * Time.deltaTime;
+            }
         }
-        return isCollision;
+
+        // 정지해 있다면 멈춰!
+        if (m_velocity.sqrMagnitude < float.Epsilon) return;
+
+        Vector3 velocity = m_velocity * Time.deltaTime;
+        if (!PhysicsCast(transform, velocity, m_collider, out RaycastHit hitInfo, m_collisionLayer))
+        {
+            // Not Collision
+            transform.position += velocity;
+        }
+        else
+        {
+            // Collision move stop
+            transform.position += m_velocity.normalized * hitInfo.distance;
+            m_velocity = Vector3.zero;
+        }
     }
 
-    protected virtual IEnumerator CheckFloor()
+    IEnumerator GravityFlagUpdate()
     {
         yield return null;
 
         while (true)
         {
-            Vector3 center = transform.position + m_collider.Center;
-            float maxDistance = 0;
-            switch (m_collider.Type)
-            {
-                case ECollider.Box:
-                    {
-                        if (m_isGround = Physics.BoxCast(center, m_collider.Param * 0.5f, Vector3.down, out RaycastHit hitInfo, transform.rotation, -m_velocity.y, m_collisionLayer.value))
-                        {
-                            transform.position = hitInfo.point;
-                        }
-                        else
-                        {
-                            m_isFalling = true;
-                        }
-                    }
-                    break;
-                case ECollider.Capsule:
-                    {
-                        center -= transform.up * (m_collider.Param.y * 0.5f - m_collider.Param.x);
-                        if (m_isGround = Physics.SphereCast(center, m_collider.Param.x, Vector3.down, out RaycastHit hitInfo, -m_velocity.y, m_collisionLayer.value))
-                        {
-                            transform.position = hitInfo.point + hitInfo.normal * m_collider.Param.x;
-                        }
-                        else
-                        {
-                            m_isFalling = true;
-                        }
-                    }
-                    break;
-                case ECollider.Sphere:
-                    {
-                        if (m_velocity.y > 0)
-                        {
-                            m_isFalling = false;
-                        }
-                        else
-                        {
-                            if (m_isGround = Physics.SphereCast(center, m_collider.Param.x, Vector3.down, out RaycastHit hitInfo, -m_velocity.y, m_collisionLayer.value))
-                            {
-                                transform.position = hitInfo.point + hitInfo.normal * m_collider.Param.x;
-                            }
-                            else
-                            {
-                                m_isFalling = true;
-                            }
-                        }
-                    }
-                    break;
-            }
-
-            if (m_isFalling)
-            {
-                transform.position += m_velocity;
-                m_velocity.y -= m_gravityAcceleration * Time.deltaTime;
-            }
-
+            Vector3 gravity = Vector3.down * m_gravityAcceleration * Time.deltaTime * Time.deltaTime;
+            m_isGround = PhysicsCast(transform, gravity, m_collider, m_collisionLayer);
+            m_isFalling = m_isGround?false:(m_velocity.y < 0);
             yield return new WaitForSeconds(0.1f);
         }
+    }
+
+    public static bool PhysicsCast(Transform trs, Vector3 velocity, ColliderInfo colliderInfo, int layerMask)
+    {
+        return PhysicsCast(trs, velocity, colliderInfo, out RaycastHit hitInfo, layerMask);
+    }
+
+    public static bool PhysicsCast(Transform trs, Vector3 velocity, ColliderInfo colliderInfo, out RaycastHit hitInfo, int layerMask)
+    {
+        bool isCollision = false;
+        Vector3 center = trs.TransformPoint(colliderInfo.Center);
+
+        switch (colliderInfo.Type)
+        {
+            case ECollider.Box:
+                isCollision = Physics.BoxCast(center, colliderInfo.Param, velocity.normalized, out hitInfo, trs.rotation, velocity.magnitude + PHYSICS_CAST_MIN_DISTANCE, layerMask);
+                break;
+            case ECollider.Capsule:
+                {
+                    Vector3 height = trs.up * colliderInfo.Param.y * 0.25f;
+                    isCollision = Physics.CapsuleCast(center + height, center - height, colliderInfo.Param.x, velocity.normalized, out hitInfo, velocity.magnitude + PHYSICS_CAST_MIN_DISTANCE, layerMask);
+                }
+                break;
+            case ECollider.Sphere:
+                isCollision = Physics.SphereCast(center, colliderInfo.Param.x, velocity.normalized, out hitInfo, velocity.magnitude + PHYSICS_CAST_MIN_DISTANCE, layerMask);
+                break;
+            default:
+                hitInfo = default;
+                break;
+        }
+
+        if (isCollision)
+        {
+            hitInfo.distance -= PHYSICS_CAST_MIN_DISTANCE;
+        }
+
+        return isCollision;
     }
 }

@@ -102,4 +102,24 @@ public static class ExtensionMethod
             behaviours[i].OnInitialize(target);
         }
     }
+
+    public static Vector3 Right(this Matrix4x4 trs)
+    {
+        return trs.GetColumn(0);
+    }
+
+    public static Vector3 Up(this Matrix4x4 trs)
+    {
+        return trs.GetColumn(1);
+    }
+
+    public static Vector3 Forward(this Matrix4x4 trs)
+    {
+        return trs.GetColumn(2);
+    }
+
+    public static Vector3 Position(this Matrix4x4 trs)
+    {
+        return trs.GetColumn(3);
+    }
 }

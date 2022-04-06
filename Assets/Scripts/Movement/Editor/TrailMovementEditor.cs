@@ -25,6 +25,7 @@ public class TrailMovementEditor : Editor
     SerializedProperty m_jumpVelocity;
     SerializedProperty m_velocity;
     SerializedProperty m_isFalling;
+    SerializedProperty m_isGround;
     SerializedProperty m_trailPath;
     SerializedProperty m_positionUnit;
     SerializedProperty m_pathPositoin;
@@ -32,6 +33,7 @@ public class TrailMovementEditor : Editor
     bool m_IsOpenCollider = true;
     bool m_IsOpenConfig = true;
     bool m_IsOpenPhysicsGroup = true;
+    GUIContent m_labelScript = new GUIContent("Script");
     GUIContent m_labelCollider = new GUIContent("- Collider");
     GUIContent m_labelExtends = new GUIContent("Extends");
     GUIContent m_labelPath = new GUIContent("* Path");
@@ -40,7 +42,6 @@ public class TrailMovementEditor : Editor
     GUIContent m_labelMinAngle = new GUIContent("MinAngle");
     GUIContent m_labelVelocity = new GUIContent("Velocity");
     GUIContent m_labelDebug = new GUIContent("- Debug Physics Info");
-    GUIStyle m_labelStyle = new GUIStyle("Label");
 
     /* Simulate */
     bool m_isOnSimulate = false;
@@ -71,6 +72,7 @@ public class TrailMovementEditor : Editor
 
         m_velocity = serializedObject.FindProperty("m_velocity");
         m_isFalling = serializedObject.FindProperty("m_isFalling");
+        m_isGround = serializedObject.FindProperty("m_isGround");
 
         SceneView.duringSceneGui -= OnSceneGUI;
         SceneView.duringSceneGui += OnSceneGUI;
@@ -85,16 +87,16 @@ public class TrailMovementEditor : Editor
     private void SimulationStop()
     {
         EditorApplication.update -= OnUpdate;
+        m_prevTime = 0;
+        m_elapsedTime = 0;
+        m_offsetTime = 0;
+        if (m_simulates != null) m_simulates.Clear();
     }
 
     private void OnDisable()
     {
-        EditorApplication.update -= OnUpdate;
+        SimulationStop();
         SceneView.duringSceneGui -= OnSceneGUI;
-        m_prevTime = 0;
-        m_elapsedTime = 0;
-        m_offsetTime = 0;
-        m_simulates.Clear();
     }
 
     private void OnUpdate()
@@ -113,6 +115,7 @@ public class TrailMovementEditor : Editor
             GUI.enabled = false;
             EditorGUILayout.PropertyField(m_velocity);
             EditorGUILayout.PropertyField(m_isFalling);
+            EditorGUILayout.PropertyField(m_isGround);
             GUI.enabled = true;
             EditorGUI.indentLevel--;
         }
@@ -122,6 +125,8 @@ public class TrailMovementEditor : Editor
 
     public override void OnInspectorGUI()
     {
+        //DrawHeader();
+        DrawDefaultInspector();
         //base.OnInspectorGUI();
         serializedObject.Update();
         EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
@@ -334,17 +339,15 @@ public class TrailMovementEditor : Editor
         GUILayout.FlexibleSpace();
         GUILayout.BeginHorizontal();
         GUILayout.Space(20);
-        GUILayout.Label("Elapsed Time:");
-        m_labelStyle.alignment = TextAnchor.MiddleRight;
-        GUILayout.Label($"{m_elapsedTime.ToString("0.000")}", m_labelStyle);
+        GUILayout.Label("Elapsed Time:", GUILayout.Width(110));
+        GUILayout.Label($"{m_elapsedTime.ToString("0.000")}");
         GUILayout.Space(20);
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
         GUILayout.Space(20);
-        GUILayout.Label("Delta Time:");
-        m_labelStyle.alignment = TextAnchor.MiddleRight;
-        GUILayout.Label($"{m_deltaTime.ToString("0.000")}", m_labelStyle);
+        GUILayout.Label("Delta Time:", GUILayout.Width(110));
+        GUILayout.Label($"{m_deltaTime.ToString("0.000")}");
         GUILayout.Space(20);
         GUILayout.EndHorizontal();
 
@@ -374,9 +377,9 @@ public class TrailMovementEditor : Editor
     {
         yield return null;
 
-        StringBuilder builder = new StringBuilder();
-
-        Debug.LogWarning(builder);
+        //StringBuilder builder = new StringBuilder();
+        //
+        //Debug.LogWarning(builder);
         var targetMatrix = Matrix4x4.TRS(target.transform.position, Quaternion.identity, Handles.matrix.lossyScale);
 
         int loop = 100;

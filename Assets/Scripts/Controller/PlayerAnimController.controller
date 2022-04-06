@@ -88,8 +88,8 @@ MonoBehaviour:
     m_Bits: 1024
   m_jumpState: 0
   m_jumpDistance: 0
-  m_velocityUp: {x: 0, y: 0, z: 0}
-  m_velocityFoward: {x: 0, y: 0, z: 0}
+  m_moveHeight: {x: 0, y: 0, z: 0}
+  m_velocity: {x: 0, y: 0, z: 0}
   m_groundPoint: {x: 0, y: 0, z: 0}
 --- !u!1109 &-6057654654255544869
 AnimatorTransition:
@@ -574,7 +574,7 @@ MonoBehaviour:
     m_RotationOrder: 4
   m_groundLayer:
     serializedVersion: 2
-    m_Bits: 1024
+    m_Bits: 3072
 --- !u!1107 &89774805226421992
 AnimatorStateMachine:
   serializedVersion: 6
@@ -924,7 +924,7 @@ MonoBehaviour:
     m_RotationOrder: 4
   m_groundLayer:
     serializedVersion: 2
-    m_Bits: 1024
+    m_Bits: 3072
 --- !u!1102 &2863680624229990236
 AnimatorState:
   serializedVersion: 6

@@ -48,7 +48,7 @@ public class Player : Unit, IHitable, IMovement//, ITrailMovement
     public float EstimatedTime => 0;
     public bool IsGround => true;
     public void AddForce(Vector3 velocity) { }
-    public void AddForce(Vector3 direction, float angle, float distance) { }
+    public void AddForce(Vector3 direction, float angle, float distance) { m_movement.Jump(); }
 
     void Awake()
     {
@@ -87,7 +87,7 @@ public class Player : Unit, IHitable, IMovement//, ITrailMovement
         else
         {
             m_animator.SetFloat(m_hashMoveSpeed, scale);
-            //m_movement.Move();
+            m_movement.Move(Vector3.forward * scale * m_timeScale * Time.deltaTime);
             //m_position += scale * 2 * Time.deltaTime * m_timeScale;
         }
     }
@@ -108,6 +108,7 @@ public class Player : Unit, IHitable, IMovement//, ITrailMovement
     //        }
     //    }
     //}
+
     IEnumerator TimeScaleCurve(float fromScale, float toScale, float inSecond)
     {
         float timer = 0;

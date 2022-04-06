@@ -47,7 +47,7 @@ public class SMBJump : SMBBase
     Vector3 m_groundPoint;
 
     IMovement m_movement;
-    MovementBase.MovementData m_currMoveInfo;
+    //MovementBase.MovementData m_currMoveInfo;
     MovementBase.MovementData m_destMoveInfo;
     Quaternion m_rotationToDest;
 
@@ -64,7 +64,8 @@ public class SMBJump : SMBBase
         {
             case EJumpState.Ready:
                 {
-                    animator.transform.rotation = Quaternion.Lerp(m_currMoveInfo.Rotation, m_rotationToDest, stateInfo.normalizedTime);
+                    Debug.Log(stateInfo.normalizedTime);
+                    //animator.transform.rotation = Quaternion.Lerp(animator.transform.rotation, m_currMoveInfo.LookAt, stateInfo.normalizedTime);
                 }
                 break;
             case EJumpState.Up:
@@ -214,6 +215,8 @@ public class SMBJump : SMBBase
     override public void OnStateMachineEnter(Animator animator, int stateMachinePathHash)
     {
         m_jumpState = EJumpState.Ready;
+
+
         //m_moveHeight = animator.transform.position.Freeze(true, false, true);
         //float jumpAngle = m_jumpAngle * Mathf.Deg2Rad;
         //float jumpForce = m_jumpForce;

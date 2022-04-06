@@ -15,7 +15,7 @@ Shader "Custom/ScreenMaskShader"
         ColorMask 0
         CGPROGRAM
 
-        #pragma surface surf _NoLight nolight keepalpha noambient noforwardadd nolightmap novertexlights noshadow
+        #pragma surface surf _NoLight keepalpha noambient noforwardadd nolightmap novertexlights noshadow
 
         struct Input
         {
@@ -32,7 +32,6 @@ Shader "Custom/ScreenMaskShader"
         ENDCG
 
         zwrite off
-
         CGPROGRAM
         // Physically based Standard lighting model, and enable shadows on all light types
         #pragma surface surf _Mask vertex:verf alpha:blend
@@ -57,6 +56,7 @@ Shader "Custom/ScreenMaskShader"
 
         void surf (Input IN, inout SurfaceOutput o)
         {
+            IN.screenPos.w = (IN.screenPos.w < 0.00001) ? 0.00001 : IN.screenPos.w;
             float2 screenUV = IN.screenPos.xy / IN.screenPos.w;
             fixed4 mask = tex2D(_MaskTex, screenUV);
             fixed4 c = tex2D (_MainTex, IN.uv_MainTex);
