@@ -20,6 +20,7 @@ public class TrailMovement : MovementBase
 
     public float StartPosition => 0;
     public float EndPosition => (m_trailPath == null) ? 0 : m_trailPath.PathLength;
+    public float CurrentPosition => m_pathPositoin;
 
     void Awake()
     {
@@ -27,49 +28,57 @@ public class TrailMovement : MovementBase
         m_isGround = false;
         m_isFalling = false;
         m_velocity = Vector3.zero;
+
+        if (m_trailPath != null)
+        {
+            m_pathPositoin = m_trailPath.StandardizeUnit(m_pathPositoin, m_positionUnit);
+            transform.position = m_trailPath.EvaluatePositionAtUnit(m_pathPositoin, m_positionUnit).RayCast(Vector3.down, m_collisionLayer);
+            transform.rotation = m_trailPath.EvaluateOrientationAtUnit(m_pathPositoin, m_positionUnit).Zero(true, false, true);
+        }
     }
 
-    public void SetPathPosition(float distance)
+        public void SetPathPosition(float distance)
     {
-        m_pathPositoin = 0;
-        transform.position = (m_trailPath.EvaluatePositionAtUnit(distance, m_positionUnit) + Vector3.up * 0.2f).RayCast(Vector3.down, m_collisionLayer.value);
+        m_pathPositoin = distance;
+        Vector3 position = (m_trailPath.EvaluatePositionAtUnit(m_trailPath.StandardizeUnit(m_pathPositoin, m_positionUnit), m_positionUnit) + Vector3.up * 0.2f).RayCast(Vector3.down, m_collisionLayer.value);
         transform.rotation = m_trailPath.EvaluateOrientationAtUnit(distance, m_positionUnit).Zero(true, false, true);
+
+        position.y += PHYSICS_CAST_MIN_DISTANCE;
+        transform.position = position;
     }
 
     public override MovementData Move(Vector3 velocity)
     {
         if (m_trailPath == null) return default;
+        if (velocity.sqrMagnitude < float.Epsilon) return default;
 
         MovementData output;
 
         m_pathPositoin = m_pathPositoin + velocity.magnitude;
-        m_pathPositoin = m_trailPath.StandardizeUnit(m_pathPositoin, m_positionUnit);
+        output.Distance = m_pathPositoin = m_trailPath.StandardizeUnit(m_pathPositoin, m_positionUnit);
         output.Position = m_trailPath.EvaluatePositionAtUnit(m_pathPositoin, m_positionUnit).RayCast(Vector3.down, m_collisionLayer);
-        //if (PhysicsCast(out RaycastHit hitInfo))
-        //{
-        //
-        //}
-        output.LookAt = output.Rotation = m_trailPath.EvaluateOrientationAtUnit(m_pathPositoin, m_positionUnit).Zero(true, false, true);
-        output.Jump = default;
-        //// 이동하게 된 거리
-        //m_moveInfo.Distance += output.Distance;
-        //m_moveInfo.Position = output.Position = TrailPath.EvaluatePositionAtUnit(m_moveInfo.Distance, PositionUnit).RayCast(Vector3.down, m_collisionLayer.value); ;
-        //m_moveInfo.Rotation = output.Rotation = TrailPath.EvaluateOrientationAtUnit(m_moveInfo.Distance, PositionUnit).Freeze(false, true, false);
-        //return output;
-        //return Move(velocity.normalized, velocity.Freeze(false, true, false).magnitude);
 
-        output.Position.y += 0.001f;
-        transform.position = output.Position;
-        transform.rotation = output.Rotation;
+        output.LookAt = output.Rotation = m_trailPath.EvaluateOrientationAtUnit(m_pathPositoin, m_positionUnit).Zero(true, false, true);
+        output.Velocity = velocity;
+        output.SimulTime = Time.deltaTime;
+
+        output.Position.y += PHYSICS_CAST_MIN_DISTANCE;
+        //transform.position = output.Position;
+        //transform.rotation = output.Rotation;
+
+        Debug.Log("::: " + LayerMask.LayerToName(Translate(output.Position, output.Rotation)));
+
         return output;
     }
 
-    public override MovementData Jump()
+    public override void Jump(Vector3 velocity)
     {
-        var moveData = CalculateEstimated(m_jumpDistance);
-        m_velocity = moveData.Jump.Velocity;
+        m_velocity = velocity;
+        m_isFalling = false;
+        m_isGround = false;
+        m_isJumping = true;
 
-        return moveData;
+        m_pathPositoin = m_trailPath.StandardizeUnit(m_pathPositoin + m_jumpDistance, m_positionUnit);
     }
 
     // Degree * 100 을 입력값으로 받음
@@ -106,16 +115,18 @@ public class TrailMovement : MovementBase
         return Mathf.Deg2Rad * BinearySearchDegree(shortJumpDegree * precision, longJumpDegree * precision, 1f / precision, distanceXZ, diffY) / precision;
     }
 
-    public override MovementData CalculateEstimated(float distance)
+    public override MovementData CalculateJumpEstimated()
     {
         MovementData output = default;
         if (m_trailPath == null) return output;
-        distance = m_jumpDistance;
         m_positionUnit = CinemachinePathBase.PositionUnits.Distance;
 
-        distance = m_trailPath.StandardizeUnit(m_pathPositoin + distance, m_positionUnit);
-        output.Position = (m_trailPath.EvaluatePositionAtUnit(distance, m_positionUnit) + Vector3.up * 0.2f).RayCast(Vector3.down, m_collisionLayer.value);
-        output.Rotation = m_trailPath.EvaluateOrientationAtUnit(distance, m_positionUnit).ZeroY();
+        float position = m_pathPositoin + m_jumpDistance;
+
+        position = m_trailPath.StandardizeUnit(position, m_positionUnit);
+        output.Distance = m_pathPositoin - position;
+        output.Position = (m_trailPath.EvaluatePositionAtUnit(position, m_positionUnit) + Vector3.up * 0.2f).RayCast(Vector3.down, m_collisionLayer.value);
+        output.Rotation = m_trailPath.EvaluateOrientationAtUnit(position, m_positionUnit).Zero(true, false, true);
 
         /*
         1. 시작지점과 도착지점의 Y값이 큰 쪽을 기준으로 삼음
@@ -130,7 +141,7 @@ public class TrailMovement : MovementBase
 
         Vector3 vTarget = output.Position - transform.position;
         Vector3 vForward = vTarget.ZeroY();
-        output.LookAt = Quaternion.FromToRotation(Vector3.forward, vForward.normalized);
+        output.LookAt = Quaternion.FromToRotation(Vector3.forward, vForward.normalized).Zero(true, false, true);
 
         float distanceXZ = vForward.magnitude;
 
@@ -158,18 +169,18 @@ public class TrailMovement : MovementBase
                         float time = Mathf.Sqrt(2 * height / m_gravityAcceleration);
                         float velocityXZ = distanceXZ / time;
 
-                        output.Jump.Velocity = vForward.normalized * distanceXZ / time;
-                        output.Jump.Velocity.y = velocityXZ * Mathf.Tan(m_jumpMinAngle * Mathf.Deg2Rad);
-                        output.Jump.Time = time;
+                        output.Velocity = vForward.normalized * distanceXZ / time;
+                        output.Velocity.y = velocityXZ * Mathf.Tan(m_jumpMinAngle * Mathf.Deg2Rad);
+                        //output.Jump.Time = time;
                     }
                     else
                     {
                         // Possible
                         // min ~ max
                         float angle = FindAngle((int)ShortJumpDegree, (int)(LongJumpDegree), 100, distanceXZ, Mathf.Abs(vTarget.y));
-                        output.Jump.Velocity = vForward.normalized * m_jumpVelocity * Mathf.Cos(angle);
-                        output.Jump.Velocity.y = m_jumpVelocity * Mathf.Sin(angle);
-                        output.Jump.Time = distanceXZ / (m_jumpVelocity * Mathf.Cos(angle));
+                        output.Velocity = vForward.normalized * m_jumpVelocity * Mathf.Cos(angle);
+                        output.Velocity.y = m_jumpVelocity * Mathf.Sin(angle);
+                        output.SimulTime = distanceXZ / (m_jumpVelocity * Mathf.Cos(angle));
                     }
                 }
                 // jumpAngle = Mathf.Acos(m_gravityAcceleration * m_jumpDistance * 0.5f / (jumpForce * jumpForce));
@@ -184,9 +195,9 @@ public class TrailMovement : MovementBase
                     float time = Mathf.Sqrt(2 * height / m_gravityAcceleration);
                     float velocityXZ = distanceXZ / time;
 
-                    output.Jump.Velocity = vForward.normalized * distanceXZ / time;
-                    output.Jump.Velocity.y = velocityXZ * Mathf.Tan(m_jumpMinAngle * Mathf.Deg2Rad);
-                    output.Jump.Time = time;
+                    output.Velocity = vForward.normalized * distanceXZ / time;
+                    output.Velocity.y = velocityXZ * Mathf.Tan(m_jumpMinAngle * Mathf.Deg2Rad);
+                    output.SimulTime = time;
                 }
                 // jumpForce = Mathf.Sqrt(m_jumpDistance * m_gravityAcceleration * 0.5f / (Mathf.Sin(jumpAngle) * Mathf.Cos(jumpAngle) * Mathf.Cos(jumpAngle)));
                 break;
@@ -195,10 +206,4 @@ public class TrailMovement : MovementBase
         return output;
     }
 
-    //public override bool PhysicsCast(Vector3 velocity, out RaycastHit hitInfo)
-    //{
-    //    if (velocity.y > 0) { hitInfo = default; return false; }
-    //
-    //    return base.PhysicsCast(velocity, out hitInfo);
-    //}
 }

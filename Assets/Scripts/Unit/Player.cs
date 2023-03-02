@@ -9,9 +9,10 @@ public interface IMovement
 
     Vector3 Velocity { get; }
     float EstimatedTime { get; }
+    bool IsFalling { get; }
     bool IsGround { get; }
-    void AddForce(Vector3 velocity);
-    void AddForce(Vector3 direction, float angle, float distance);
+    bool IsJumping { get; }
+    void Jump();
 }
 
 public class Player : Unit, IHitable, IMovement//, ITrailMovement
@@ -43,17 +44,14 @@ public class Player : Unit, IHitable, IMovement//, ITrailMovement
     Animator m_animator;
 
     public MovementBase Movement => m_movement;
-
-    public Vector3 Velocity => Vector3.zero;
+    public Vector3 Velocity => m_movement.Velocity;
     public float EstimatedTime => 0;
-    public bool IsGround => true;
-    public void AddForce(Vector3 velocity) { }
-    public void AddForce(Vector3 direction, float angle, float distance) { m_movement.Jump(); }
+    public bool IsFalling => m_movement.IsFalling;
+    public bool IsGround => m_movement.IsGround;
+    public bool IsJumping => m_movement.IsJumping;
 
     void Awake()
     {
-        m_characterController = GetComponent<CharacterController>();
-
         m_sight = GetComponent<Sight>();
         m_animator = GetComponent<Animator>();
         m_animator.SetFloat(m_hashJumpDistance, m_jumpDistance);
@@ -78,11 +76,11 @@ public class Player : Unit, IHitable, IMovement//, ITrailMovement
     public void Jump()
     {
         m_animator.SetBool(m_hashJump, true);
-        //m_position += m_jumpDistance;
     }
 
     public void Move(float scale)
     {
+        m_animator.SetFloat(m_hashMoveSpeed, scale);
         if (m_animator.GetBool(m_hashJump)) { m_animator.SetFloat(m_hashMoveSpeed, 0); }
         else
         {
@@ -91,23 +89,6 @@ public class Player : Unit, IHitable, IMovement//, ITrailMovement
             //m_position += scale * 2 * Time.deltaTime * m_timeScale;
         }
     }
-
-    //void SetTranform(float distanceAlongPath)
-    //{
-    //    if (m_path != null && !m_animator.GetBool(m_hashJump))
-    //    {
-    //        m_position = m_path.StandardizeUnit(distanceAlongPath, m_positionUnit);
-    //        transform.position = m_path.EvaluatePositionAtUnit(m_position, m_positionUnit);
-    //        Quaternion rotation = m_path.EvaluateOrientationAtUnit(m_position, m_positionUnit);
-    //        rotation.x = 0;
-    //        rotation.z = 0;
-    //        transform.rotation = rotation;
-    //        if (Physics.Raycast(transform.position + Vector3.up * 1.5f, Vector3.down, out RaycastHit hitInfo, 3f, m_groundLayer))
-    //        {
-    //            transform.position = hitInfo.point;
-    //        }
-    //    }
-    //}
 
     IEnumerator TimeScaleCurve(float fromScale, float toScale, float inSecond)
     {

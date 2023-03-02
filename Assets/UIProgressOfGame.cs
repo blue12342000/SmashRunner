@@ -9,15 +9,15 @@ public class UIProgressOfGame : MonoBehaviour
     [SerializeField]
     Slider m_slider;
     [SerializeField]
-    CinemachineDollyCart m_target;
+    TrailMovement m_target;
 
     void Start()
     {
-        m_slider.maxValue = m_target.m_Path.MaxPos;
+        m_slider.maxValue = m_target.EndPosition;
     }
 
     void Update()
     {
-        m_slider.value = m_target.m_Position;
+        m_slider.value = m_target.CurrentPosition;
     }
 }

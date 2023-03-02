@@ -268,8 +268,8 @@ public class TrailMovementEditor : Editor
                 SimulationStart();
                 foreach (var t in m_targets)
                 {
-                    var move = t.Jump();
-                    m_simulates.Add(Simulation(t, move.Jump.Velocity, move.Jump.Time));
+                    var move = t.CalculateJumpEstimated();
+                    m_simulates.Add(Simulation(t, move.Velocity, move.SimulTime));
                 }
 
                 m_isOnSimulate = true;

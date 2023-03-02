@@ -1135,7 +1135,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3133343870729102704}
   - component: {fileID: 3133343870719382954}
-  - component: {fileID: 3133343871090363857}
   - component: {fileID: 3133343871090363856}
   - component: {fileID: 3133343871090363692}
   - component: {fileID: 3133343871090363693}
@@ -1186,24 +1185,6 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
---- !u!143 &3133343871090363857
-CharacterController:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3133343870728839870}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Height: 2
-  m_Radius: 0.5
-  m_SlopeLimit: 45
-  m_StepOffset: 0.3
-  m_SkinWidth: 0.08
-  m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 1, z: 0}
 --- !u!114 &3133343871090363856
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1274,7 +1255,6 @@ MonoBehaviour:
     Type: 0
     Center: {x: 0, y: 0, z: 0}
     Param: {x: 1, y: 1, z: 1}
-  Character: {fileID: 3133343871090363857}
   m_timeScale: 0
   m_isUseGravity: 1
   m_gravityAcceleration: 10
@@ -1285,12 +1265,20 @@ MonoBehaviour:
   m_jumpEstimate: 0
   m_jumpDistance: 4
   m_jumpMinAngle: 55
-  m_jumpForce: 60
-  m_trailPath: {fileID: 0}
-  m_moveInfo:
+  m_jumpVelocity: 0
+  m_isFalling: 0
+  m_isGround: 0
+  m_isJumping: 0
+  m_current:
+    Distance: 0
     Position: {x: 0, y: 0, z: 0}
     Rotation: {x: 0, y: 0, z: 0, w: 0}
-    Distance: 0
+    LookAt: {x: 0, y: 0, z: 0, w: 0}
+    Velocity: {x: 0, y: 0, z: 0}
+    SimulTime: 0
+  m_trailPath: {fileID: 0}
+  m_positionUnit: 1
+  m_pathPositoin: 0
 --- !u!1 &3133343870728842144
 GameObject:
   m_ObjectHideFlags: 0

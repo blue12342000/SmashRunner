@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using UnityEngine.Events;
 
 public class SMBJump : SMBBase
 {
@@ -39,17 +40,10 @@ public class SMBJump : SMBBase
     EJumpState m_jumpState = EJumpState.Ready;
     [SerializeField]
     float m_jumpDistance;
-    [SerializeField]
-    Vector3 m_moveHeight;
-    [SerializeField]
-    Vector3 m_velocity;
-    [SerializeField]
-    Vector3 m_groundPoint;
 
     IMovement m_movement;
-    //MovementBase.MovementData m_currMoveInfo;
-    MovementBase.MovementData m_destMoveInfo;
-    Quaternion m_rotationToDest;
+    int m_currStateId;
+    MovementBase.MovementData m_dest;
 
     public override void OnInitialize(MonoBehaviour target)
     {
@@ -64,111 +58,35 @@ public class SMBJump : SMBBase
         {
             case EJumpState.Ready:
                 {
-                    Debug.Log(stateInfo.normalizedTime);
-                    //animator.transform.rotation = Quaternion.Lerp(animator.transform.rotation, m_currMoveInfo.LookAt, stateInfo.normalizedTime);
+                    //Debug.Log(stateInfo.normalizedTime);
+                    animator.transform.rotation = Quaternion.Lerp(animator.transform.rotation, m_dest.LookAt, stateInfo.normalizedTime);
                 }
                 break;
             case EJumpState.Up:
                 {
-                    if (m_movement.Velocity.y < 0)
+                    if (!m_movement.IsJumping)
+                    {
+                        m_jumpState = EJumpState.Land;
+                        animator.SetTrigger(m_hashLand);
+                    }
+                    else if (m_movement.IsFalling)
                     {
                         m_jumpState = EJumpState.Down;
                     }
-
-                    //float deltaHeight = m_speedCurve.Evaluate(stateInfo.normalizedTime) * m_force * Time.deltaTime;
-                    //if (m_movement.CheckCast(vDelta, m_destMoveInfo.Position, out RaycastHit hitInfo))
-                    //{
-                    //    vDelta = vDelta.normalized * hitInfo.distance;
-                    //    m_moveHeight.y += vDelta.y;
-                    //
-                    //    var moveInfo = m_movement.MoveTo(vDelta, m_destMoveInfo);
-                    //    moveInfo.Position = moveInfo.Position.Freeze(false, true, false) + m_moveHeight;
-                    //    animator.transform.SetMoveInfo(moveInfo);
-                    //
-                    //    m_velocity = Vector3.down * m_gravityAcceleration * deltaTime;
-                    //    m_jumpState = JumpState.Down;
-                    //}
-                    //else
-                    //{
-                    //    m_moveHeight.y += vDelta.y;
-                    //    var moveInfo = m_movement.MoveTo(vDelta, m_destMoveInfo);
-                    //    moveInfo.Position = moveInfo.Position.Freeze(false, true, false) + m_moveHeight;
-                    //    animator.transform.SetMoveInfo(moveInfo);
-                    //
-                    //    m_velocity += Vector3.down * m_gravityAcceleration * deltaTime;
-                    //    if (m_velocity.y < 0) { m_jumpState = JumpState.Down; }
-                    //}
-                    //animator.transform.position += (m_velocityFoward + m_velocityUp) * deltaTime;
                 }
                 break;
             case EJumpState.Down:
                 {
-                    if (m_movement.IsGround)
+                    if (m_movement.IsGround || !m_movement.IsJumping)
                     {
                         m_jumpState = EJumpState.Land;
-                    }
-
-                    // Ground Check
-                    //if (m_movement.CheckCast(vDelta, m_destMoveInfo.Position, out Vector3 hitPoint))
-                    //{
-                        // Landing Motion
-
-                        // if hitPoint is not dest position;
-                        //vDelta = m_velocity.normalized * hitInfo.distance;
-                        //
-                        //var moveInfo = m_movement.MoveTo(vDelta, m_destMoveInfo);
-                    //    animator.transform.position = hitPoint;
-                    //
-                    //    animator.SetTrigger(m_hashLand);
-                    //    m_jumpState = JumpState.Land;
-                    //}
-                    //else
-                    //{
-                    //    m_moveHeight.y += vDelta.y;
-                    //    var moveInfo = m_movement.MoveTo(vDelta, m_destMoveInfo);
-                    //    moveInfo.Position = moveInfo.Position.Freeze(false, true, false) + m_moveHeight;
-                    //    //animator.transform.position = moveInfo.Position;
-                    //    animator.transform.SetMoveInfo(moveInfo);
-                    //
-                    //    m_velocity += Vector3.down * m_gravityAcceleration * deltaTime;
-                    //}
-
-                    /**
-                    Vector3 moveVelocity = (m_velocityFoward + m_velocityUp) * deltaTime;
-                    if (Physics.Raycast(animator.transform.position, moveVelocity.normalized, out RaycastHit hitInfo, moveVelocity.magnitude + 1 * animator.speed, m_groundLayer.value))
-                    {
                         animator.SetTrigger(m_hashLand);
-                        m_groundPoint = hitInfo.point;
-                        m_jumpState = JumpState.Land;
                     }
-                    else
-                    {
-                        animator.transform.position += moveVelocity;
-                    }
-                    **/
                 }
                 break;
             case EJumpState.Land:
                 {
-                    //if (m_movement.CheckCast(vDelta, out RaycastHit hitInfo))
-                    //{
-                    //    vDelta = vDelta.normalized * hitInfo.distance;
-                    //    var moveInfo = m_movement.Move(vDelta);
-                    //    animator.transform.SetMoveInfo(moveInfo);
-                    //}
-                    //else
-                    //{
-                    //    m_moveHeight.y += vDelta.y;
-                    //    var moveInfo = m_movement.Move(vDelta);
-                    //    moveInfo.Position = moveInfo.Position.Freeze(false, true, false) + m_moveHeight;
-                    //    moveInfo.Rotation = Quaternion.Lerp(animator.transform.rotation, moveInfo.Rotation, stateInfo.normalizedTime);
-                    //    animator.transform.SetMoveInfo(moveInfo);
-                    //
-                    //    m_velocity += Vector3.down * m_gravityAcceleration * deltaTime;
-                    //}
-
-                    // Rotation
-                    animator.transform.rotation = Quaternion.Lerp(animator.transform.rotation, m_destMoveInfo.Rotation, stateInfo.normalizedTime);
+                    animator.transform.rotation = Quaternion.Lerp(m_dest.LookAt, m_dest.Rotation, stateInfo.normalizedTime);
                 }
                 break;
         }
@@ -179,7 +97,9 @@ public class SMBJump : SMBBase
         if (m_jumpState == EJumpState.Ready)
         {
             m_jumpState = EJumpState.Up;
-            m_movement.AddForce(animator.transform.forward, m_jumpAngle, m_jumpDistance);
+            animator.transform.rotation = m_dest.LookAt;
+            m_movement.Movement.Jump(m_dest.Velocity);
+            //m_movement.AddForce(animator.transform.forward, m_jumpAngle, m_jumpDistance);
         }
     }
 
@@ -215,45 +135,13 @@ public class SMBJump : SMBBase
     override public void OnStateMachineEnter(Animator animator, int stateMachinePathHash)
     {
         m_jumpState = EJumpState.Ready;
-
-
-        //m_moveHeight = animator.transform.position.Freeze(true, false, true);
-        //float jumpAngle = m_jumpAngle * Mathf.Deg2Rad;
-        //float jumpForce = m_jumpForce;
-        //
-        //m_currMoveInfo = m_movement.Current;
-        //switch (m_jumpMode)
-        //{
-        //    case JumpMode.Fixed_Both:
-        //        m_destMoveInfo = m_currMoveInfo;
-        //        m_rotationToDest = animator.transform.rotation;
-        //        break;
-        //    case JumpMode.Fixed_Force:
-        //        m_jumpDistance = animator.GetFloat(m_hashJumpDistance);
-        //        // 점프 거리만큼의 목적지 계산
-        //        m_destMoveInfo = m_movement.CalculatePoint(animator.transform.forward, m_jumpDistance);
-        //        m_rotationToDest = Quaternion.LookRotation(m_destMoveInfo.Position - m_currMoveInfo.Position).Freeze(false, true, false);
-        //
-        //        m_jumpDistance = Vector3.Distance(m_currMoveInfo.Position, m_destMoveInfo.Position);
-        //        jumpAngle = Mathf.Acos(m_gravityAcceleration * m_jumpDistance * 0.5f / (jumpForce * jumpForce));
-        //        break;
-        //    case JumpMode.Fixed_Angle:
-        //        m_jumpDistance = animator.GetFloat(m_hashJumpDistance);
-        //        m_destMoveInfo = m_movement.CalculatePoint(animator.transform.forward, m_jumpDistance);
-        //        m_rotationToDest = Quaternion.LookRotation(m_destMoveInfo.Position - m_currMoveInfo.Position).Freeze(false, true, false);
-        //
-        //        m_jumpDistance = Vector3.Distance(m_currMoveInfo.Position, m_destMoveInfo.Position);
-        //        jumpForce = Mathf.Sqrt(m_jumpDistance * m_gravityAcceleration * 0.5f / (Mathf.Sin(jumpAngle) * Mathf.Cos(jumpAngle) * Mathf.Cos(jumpAngle)));
-        //        break;
-        //}
-        //
-        //m_velocity = (m_destMoveInfo.Position - m_currMoveInfo.Position).normalized.Freeze(false, true, false) * jumpForce * Mathf.Cos(jumpAngle);
-        //m_velocity += Vector3.up * jumpForce * Mathf.Sin(jumpAngle);
+        m_dest = m_movement.Movement.CalculateJumpEstimated();
     }
 
     // OnStateMachineExit is called when exiting a state machine via its Exit Node
     override public void OnStateMachineExit(Animator animator, int stateMachinePathHash)
     {
         animator.SetBool(m_hashJump, false);
+        animator.transform.rotation = m_dest.Rotation;
     }
 }

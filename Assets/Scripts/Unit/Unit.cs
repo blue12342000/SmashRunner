@@ -7,7 +7,7 @@ interface IHitable
     void Hit();
 }
 
-[RequireComponent(typeof(Sight), typeof(CharacterController))]
+[RequireComponent(typeof(Sight))]
 public abstract class Unit : MonoBehaviour, IHitable
 {
     [SerializeField]
@@ -16,7 +16,6 @@ public abstract class Unit : MonoBehaviour, IHitable
     protected int m_hp;
     [SerializeField]
     protected int m_maxHp;
-    protected CharacterController m_characterController;
     protected Sight m_sight;
     
     public Sight Sight { get { return m_sight; } }
